@@ -3,7 +3,7 @@
    Multi-agent system with predictive analytics.
    
    ## Architecture
-   (다이어그램 추가 예정)
+*Diagram coming soon*
    
    ## Features
    - ProjectFlow data integration

@@ -141,11 +141,7 @@ graph TB
         BJ --> BK[genome.fa.idx]
     end
     
-    style M fill:#ff6b6b
-    style X fill:#4ecdc4
-    style AE fill:#ffe66d
-    style AK fill:#a8e6cf
-    style AM fill:#95e1d3
+  
 ```
 
 ---
@@ -194,11 +190,7 @@ graph LR
     I --> M
     T --> C
     
-    style A fill:#ff6b6b
-    style C fill:#4ecdc4
-    style D fill:#ffe66d
-    style E fill:#a8e6cf
-    style I fill:#95e1d3
+  
 ```
 
 ### 2. BLAST Search Workflow
@@ -316,11 +308,7 @@ flowchart TD
     
     BR --> BS[Display Color-Coded HTML]
     
-    style O fill:#ffe6e6
-    style P fill:#e6f3ff
-    style AT fill:#e6ffe6
-    style AZ fill:#fff4e6
-    style BO fill:#f0e6ff
+   
 ```
 
 ### 3. Hit Stitching Algorithm
@@ -345,7 +333,8 @@ flowchart TD
     J --> L["Subject Gap = NextHSP.sbjct_start - Current End"]
     K --> M["Subject Gap = Current End - NextHSP.sbjct_start"]
     
-    L --> N{Query Gap > 0 OR |Subject Gap| > 0?}
+    %% 이 부분의 | 기호를 텍스트로 수정했습니다 %%
+    L --> N{"Query Gap > 0 OR abs(Subject Gap) > 0?"}
     M --> N
     
     N -->|Yes| O[Create Gap Segment]
@@ -395,7 +384,8 @@ flowchart TD
     AM --> AN["Wrap in Green: All Aligned Region"]
     AN --> AO[Append to Stitched Parts]
     
-    AD -->|Gap| AP["Gap Length = |sbjct_gap|"]
+    %% 이 부분의 | 기호도 abs() 텍스트로 수정했습니다 %%
+    AD -->|Gap| AP["Gap Length = abs(sbjct_gap)"]
     AP --> AQ{Gap Length > MAX_GAP_TO_STITCH 2kb?}
     
     AQ -->|Yes| AR["Append Gray: [...Large Gap: Nbp...]"]
@@ -431,11 +421,7 @@ flowchart TD
     BG --> BH["Join All Parts into Final Stitched Sequence"]
     BH --> BI[Return Color-Coded HTML Sequence]
     
-    style AE fill:#d4edda
-    style AS fill:#cce5ff
-    style AH fill:#f8d7da
-    style AL fill:#cce5ff
-    style AR fill:#e9ecef
+
 ```
 
 ---

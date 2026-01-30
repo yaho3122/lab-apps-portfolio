@@ -12,7 +12,7 @@ BlastN is a production-ready bioinformatics tool designed to bridge the gap betw
 
 - Scalable Performance: Includes a "Summary Mode" for large queries (>1kb) to prevent application crashes by allowing manual inspection of gap distances before stitching.
 
-| Developer's Note: "This tool was born out of a real-world wet-lab failure. After a strand-logic error led to failed PCR primers, I rebuilt this app with a 'Trust but Verify' philosophy, making ClustalW validation a core pillar of the workflow."
+> Developer's Note: "This tool was born out of a real-world wet-lab failure. After a strand-logic error led to failed PCR primers, I rebuilt this app with a 'Trust but Verify' philosophy, making ClustalW validation a core pillar of the workflow."
 
 
 ## Application Overview

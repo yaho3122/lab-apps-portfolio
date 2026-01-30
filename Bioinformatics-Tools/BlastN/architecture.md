@@ -592,16 +592,6 @@ BlastN/
 ```json
 {
   "genomes": {
-    "P1234": {
-      "name": "P1234",
-      "fasta": "P1234.fa",
-      "description": "Consensus sequence from P1234 BAM file"
-    },
-    "R8088": {
-      "name": "R8088", 
-      "fasta": "R8088.fa",
-      "description": "Consensus sequence from R8088 BAM file"
-    },
     "NPB": {
       "name": "NPB", 
       "fasta": "NPB.fa",

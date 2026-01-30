@@ -4,15 +4,15 @@
 BlastN is a production-ready bioinformatics tool designed to bridge the gap between computational BLAST results and experimental biological reality. It is specifically optimized for handling proprietary genomes and complex fragmented alignments.
 
 🚀 Key Value Propositions
-Intelligent Hit Stitching: Automatically merges fragmented BLAST HSPs into continuous sequences, filling gaps up to 2kb with actual reference sequences.
+- Intelligent Hit Stitching: Automatically merges fragmented BLAST HSPs into continuous sequences, filling gaps up to 2kb with actual reference sequences.
 
-Biological Accuracy (Strand-Aware): Precisely extracts 5' (promoter) and 3' (UTR) flanking regions by calculating coordinates based on genomic orientation (Plus/Minus strands).
+- Biological Accuracy (Strand-Aware): Precisely extracts 5' (promoter) and 3' (UTR) flanking regions by calculating coordinates based on genomic orientation (Plus/Minus strands).
 
-Fail-Safe Verification: Features an integrated ClustalW global alignment layer to self-verify every result, preventing costly errors in primer and gRNA design.
+- Fail-Safe Verification: Features an integrated ClustalW global alignment layer to self-verify every result, preventing costly errors in primer and gRNA design.
 
-Scalable Performance: Includes a "Summary Mode" for large queries (>1kb) to prevent application crashes by allowing manual inspection of gap distances before stitching.
+- Scalable Performance: Includes a "Summary Mode" for large queries (>1kb) to prevent application crashes by allowing manual inspection of gap distances before stitching.
 
-Developer's Note: "This tool was born out of a real-world wet-lab failure. After a strand-logic error led to failed PCR primers, I rebuilt this app with a 'Trust but Verify' philosophy, making ClustalW validation a core pillar of the workflow."
+| Developer's Note: "This tool was born out of a real-world wet-lab failure. After a strand-logic error led to failed PCR primers, I rebuilt this app with a 'Trust but Verify' philosophy, making ClustalW validation a core pillar of the workflow."
 
 
 ## Application Overview

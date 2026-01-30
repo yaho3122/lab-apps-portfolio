@@ -959,7 +959,7 @@ aligned_region = "<font color='green'>" + output + "</font>"
       "description": "Consensus sequence from NPB BAM file"
     }
   }
-}
+
 ```
 
 ---

@@ -22,6 +22,14 @@
 
 > **Developer's Note**: "Codon_OPT was built by a wet-lab scientist to solve the limitations of deterministic optimization. By using stochastic genetic algorithms, we explore a broader solution space to find sequences that aren't just 'mathematically correct' but are biologically optimized for real-world protein expression."
 
+### 💡 Why Codon_OPT over Standard Vendor Tools?
+
+While commercial synthesis vendors provide automated optimization, they often prioritize "Ease of Synthesis" over "Biological Performance." Codon_OPT shifts the control back to the researcher:
+
+* **Beyond Black-Box Algorithms**: Vendor tools are often "black boxes" that prioritize avoiding synthesis complexity. Codon_OPT uses a transparent NSGA-III genetic algorithm to balance synthesis with high-level protein expression.
+* **Hyper-Customized Avoidance**: Standard tools have rigid motif avoidance rules. Codon_OPT allows researchers to define specific restriction sites and adverse motifs tailored to their unique vector systems and experimental needs.
+* **Biologist-Centric Optimization**: Instead of a deterministic "one-size-fits-all" approach, this tool explores the Pareto front of codon harmony and context, ensuring the sequence is optimized for the target organism's actual biology, not just the vendor's machine requirements.
+
 ---
 
 ## Application Overview

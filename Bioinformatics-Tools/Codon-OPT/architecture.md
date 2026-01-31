@@ -1,7 +1,5 @@
 # Codon_OPT: Multi-Organism Codon Optimization System
 
-# Codon_OPT: Multi-Organism Codon Optimization System
-
 ## 🚀 Executive Summary
 
 **Codon_OPT** is a high-performance bioinformatics application designed for multi-organism DNA codon optimization. Leveraging the **NSGA-III (Non-dominated Sorting Genetic Algorithm III)**, the system simultaneously balances competing biological objectives—codon harmony, GC content, and motif avoidance—to generate DNA sequences optimized for maximal protein expression in target plant organisms.

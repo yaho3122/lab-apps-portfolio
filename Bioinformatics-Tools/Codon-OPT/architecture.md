@@ -78,7 +78,7 @@ graph TB
     end
     
     subgraph "Flask Application Server"
-        F --> I[/optimize POST]
+        F --> I["/optimize POST"]
         I --> J[Create Job ID]
         J --> K[Spawn Background Thread]
         
@@ -88,15 +88,15 @@ graph TB
         N --> O[Multi-Objective Evaluation]
         O --> P[Store Results]
         
-        G --> Q[/reverse_translate POST]
+        G --> Q["/reverse_translate POST"]
         Q --> R{Mode?}
         R -->|Fastest| S[Max Frequency Codons]
         R -->|Harmonized| T[Weighted Random Selection]
         
-        H --> U[/manual_optimize POST]
+        H --> U["/manual_optimize POST"]
         U --> V[Codon Alternative Generator]
         
-        AA[Job Status Polling] --> W[/status/<job_id> GET]
+        AA[Job Status Polling] --> W["/status/<job_id> GET"]
         W --> X[Read Job Store]
     end
     

@@ -1,27 +1,30 @@
 # Codon_OPT: Multi-Organism Codon Optimization System
 
-🧬 Executive Summary
-Codon_OPT is a high-performance bioinformatics application designed for multi-organism DNA codon optimization. Leveraging the NSGA-III (Non-dominated Sorting Genetic Algorithm III), the system simultaneously balances competing biological objectives—codon harmony, GC content, and motif avoidance—to generate DNA sequences optimized for maximal protein expression in target plant organisms.
+# Codon_OPT: Multi-Organism Codon Optimization System
 
-🚀 Key Value Propositions
-Multi-Objective Genetic Optimization: Beyond simple "best codon" selection, it uses a population-based genetic algorithm to optimize codon harmony, context, and problematic motifs (splice sites, AU-rich elements, homopolymers) simultaneously.
+## 🚀 Executive Summary
 
-Scientific Rigor & Validation: Includes a comprehensive 9-metric quality control engine that scores sequences based on protein identity, CAI (Codon Adaptation Index), rare codons, and alternative reading frames.
+**Codon_OPT** is a high-performance bioinformatics application designed for multi-organism DNA codon optimization. Leveraging the **NSGA-III (Non-dominated Sorting Genetic Algorithm III)**, the system simultaneously balances competing biological objectives—codon harmony, GC content, and motif avoidance—to generate DNA sequences optimized for maximal protein expression in target plant organisms.
 
-Asynchronous Production Workflow: Built with a background job processing system and persistent storage, allowing users to run thorough, multi-run optimizations without browser timeouts.
+### 🧪 Core Value Propositions
 
-Interactive Manual Refinement: Provides a unique "Manual Optimization" mode that allows scientists to fine-tune individual codons using frequency-ranked alternatives while receiving real-time validation feedback.
+* **Multi-Objective Genetic Optimization**: Beyond simple "best codon" selection, it uses a population-based genetic algorithm to optimize codon harmony, context, and problematic motifs (splice sites, AU-rich elements, homopolymers) simultaneously.
+* **Scientific Rigor & Validation**: Includes a comprehensive **9-metric quality control engine** that scores sequences based on protein identity, CAI (Codon Adaptation Index), rare codons, and alternative reading frames.
+* **Asynchronous Production Workflow**: Built with a background job processing system and persistent storage, allowing users to run thorough, multi-run optimizations without browser timeouts.
+* **Interactive Manual Refinement**: Provides a unique "Manual Optimization" mode that allows scientists to fine-tune individual codons using frequency-ranked alternatives while receiving real-time validation feedback.
 
-🛠 Tech Stack & Performance
-Algorithm Engine: NSGA-III Genetic Algorithm with tournament selection, two-point crossover, and frequency-weighted mutation.
+[Image of a multi-objective genetic algorithm workflow for DNA codon optimization showing population evolution and Pareto front selection]
 
-Backend: Flask (Python) with asynchronous threading and persistent shelve database for job management.
+### 🛠 Tech Stack & Performance
 
-Data Sources: Species-specific codon frequency tables (Rice, Maize, Soybean, Canola) sourced from the Kazusa Codon Usage Database.
+* **Algorithm Engine**: NSGA-III Genetic Algorithm with tournament selection, two-point crossover, and frequency-weighted mutation.
+* **Backend**: Flask (Python) with asynchronous threading and persistent `shelve` database for job management.
+* **Data Sources**: Species-specific codon frequency tables (Rice, Maize, Soybean, Canola) sourced from the **Kazusa Codon Usage Database**.
+* **Optimization Speed**: Fast mode (~5s) for quick checks, or Thorough mode (~15s) for high-confidence synthesis-ready sequences.
 
-Optimization Speed: Fast mode (~5s) for quick checks, or Thorough mode (~15s) for high-confidence synthesis-ready sequences.
+> **Developer's Note**: "Codon_OPT was built by a wet-lab scientist to solve the limitations of deterministic optimization. By using stochastic genetic algorithms, we explore a broader solution space to find sequences that aren't just 'mathematically correct' but are biologically optimized for real-world protein expression."
 
-Developer's Note: "Codon_OPT was built by a wet-lab scientist to solve the limitations of deterministic optimization. By using stochastic genetic algorithms, we explore a broader solution space to find sequences that aren't just 'mathematically correct' but are biologically optimized for real-world protein expression."
+---
 
 ## Application Overview
 

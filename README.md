@@ -24,7 +24,7 @@ Built over 6 months (July 2024 - Present) to digitize and automate laboratory wo
 - **MutMap** - Bulked segregant analysis
 
 ### 🧬 CRISPR Design Tools
-- **chopchop** - gRNA design for Cas9/Cas12
+- **GuideCheck-Local** - gRNA design for Cas9/Cas12
 - **Codon_OPT** - Plant codon optimization (NSGA-III)
 - **Primer3** - Integrated primer design with specificity checking
 

@@ -4,7 +4,7 @@ Portfolio of 30+ laboratory information management and bioinformatics applicatio
 # Laboratory Information Management System Portfolio
 
 ## Overview
-A collection of 20+ web applications developed for a CRISPR Genome Editing Laboratory.
+A collection of 30+ web applications developed for a CRISPR Genome Editing Laboratory.
 Built over 6 months (July 2024 - Present) to digitize and automate laboratory workflows.
 
 ## Technology Stack

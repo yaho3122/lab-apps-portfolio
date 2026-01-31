@@ -634,7 +634,7 @@ ORGANISMS = {
 
 ```python
 jobs_db[job_id] = {
-    'name': 'Rice CMS1 Optimization',
+    'name': 'Rice CRISPR Optimization',
     'status': 'SUCCESS',               # PENDING, RUNNING, SUCCESS, FAILURE
     'status_message': 'Optimization completed successfully.',
     'result': {
@@ -661,7 +661,7 @@ jobs_db[job_id] = {
         'mode': 'thorough',
         'num_runs': 3,
         'organism': 'Rice (Oryza sativa Japonica)',
-        'job_name': 'Rice CMS1 Optimization',
+        'job_name': 'Rice CRISPR Optimization',
         'validation': {
             'results': {...},           # 9 validation checks
             'summary': {...}

@@ -13,7 +13,7 @@
 * **Asynchronous Production Workflow**: Built with a background job processing system and persistent storage, allowing users to run thorough, multi-run optimizations without browser timeouts.
 * **Interactive Manual Refinement**: Provides a unique "Manual Optimization" mode that allows scientists to fine-tune individual codons using frequency-ranked alternatives while receiving real-time validation feedback.
 
-[Image of a multi-objective genetic algorithm workflow for DNA codon optimization showing population evolution and Pareto front selection]
+[Image is coming soon]
 
 ### 🛠 Tech Stack & Performance
 

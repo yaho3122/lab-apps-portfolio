@@ -1,5 +1,5 @@
 # lab-apps-portfolio
-Portfolio of 20+ laboratory information management and bioinformatics applications
+Portfolio of 30+ laboratory information management and bioinformatics applications
 
 # Laboratory Information Management System Portfolio
 

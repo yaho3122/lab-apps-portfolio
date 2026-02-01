@@ -163,14 +163,14 @@ The platform addresses two critical challenges in protein engineering:
 graph TD
     A[User: Input Scaffold + Donor Sequences] --> B[ESM-2 2D Entropy Analysis]
     B --> C[Smart Masking & Adaptive Search]
-    C --> D[2D Attention Heatmap (Fusion Site Candidates)]
+    C --> D["2D Attention Heatmap (Fusion Site Candidates)"]
     D --> E[User: Select Fusion Site]
     E --> F[Create Chimeric Sequence]
     F --> G[ESMFold: Initial Structure Prediction]
-    G --> H{pLDDT >= 0.80?}
+    G --> H{"pLDDT >= 0.80?"}
     H -- Yes --> I[Success: Return Chimera]
-    H -- No --> J[Healing Loop: ESM-IF1 (Adaptive Temperature) + ESMFold]
-    J --> K{Round < 3 and pLDDT Improved?}
+    H -- No --> J["Healing Loop: ESM-IF1 (Adaptive Temperature) + ESMFold"]
+    J --> K{"Round < 3 and pLDDT Improved?"}
     K -- Yes --> J
     K -- No --> L[Return Best Attempt]
     I --> M[Validation Report + Download]

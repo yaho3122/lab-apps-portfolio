@@ -1,66 +1,46 @@
-# E2E Chat: AI-Integrated Secure Data Transfer System
+# E2E Chat: End-to-End Encrypted Chat with AI Bot Integration
 
-## 🚀 Executive Summary
-
-**E2E Chat** is a browser-based, end-to-end encrypted (E2EE) file transfer and AI analysis platform designed to eliminate a critical security gap in laboratory workflows. It specifically targets equipment computers that cannot install standard communication tools (like MS Teams), replacing insecure plaintext network drives with a bank-level encrypted solution.
-
-### 🧪 Core Value Propositions
-
-* **Secure Equipment Data Transfer**: Provides a browser-only, zero-installation pathway to transfer sensitive experimental data from restricted instrument PCs to analysis workstations.
-* **End-to-End Encryption (E2EE)**: Utilizes client-side RSA-2048 and AES-256 encryption. The server never has access to message plaintext or file content, ensuring total intellectual property protection.
-* **Agentic AI Bot Integration**: Features a streaming AI assistant that performs Retrieval-Augmented Generation (RAG) across lab protocols and executes real-time SQL queries against ProjectFlow (task tracking) and iCal (inventory) databases.
-* **Automated Data Analytics**: Beyond chat, the bot automatically generates CSV summaries and Matplotlib visualizations from experimental data, streamlining the path from raw results to presentation-ready charts.
-* **Audit & Compliance Ready**: Replaces "invisible" network drive transfers with a complete audit trail, logging every upload, download, and access event with precise timestamps.
-
-
-### 🛠 Tech Stack & Security Architecture
-
-* **Encryption Layer**: Web Crypto API for client-side key generation and encryption; PBKDF2 with 100,000 iterations for private key protection.
-* **AI & RAG Engine**: ChromaDB vector store with Sentence Transformers (all-MiniLM-L6-v2) for semantic document search.
-* **Real-Time Layer**: Flask-SocketIO for instantaneous "bot_chunk" streaming and typewriter-effect UI responsiveness.
-* **Deployment**: On-premise Waitress server with IP-based whitelisting, ensuring data never leaves the internal laboratory network.
-
-> **Scientist's Note**: "This application transforms the high-risk 'Z-Drive' workaround into a secure, auditable, and AI-enhanced pipeline. It’s not just a chat tool—it’s a security upgrade that turns equipment data into immediate insights."
-
----
 ## Application Overview
 
-**E2E Chat** is a browser-based secure file transfer system with AI-powered data analysis, designed to solve a critical gap in laboratory workflows: **equipment computers that cannot install Microsoft Teams**. Built with client-side RSA-2048 encryption, the server never has access to message plaintext. The application features real-time streaming AI responses, multi-database integration (ProjectFlow, iCal Inventory), document-based RAG (Retrieval-Augmented Generation), and automatic data export/visualization.
+**E2E Chat** is an intelligent agentic RAG (Retrieval-Augmented Generation) system that provides natural language access to laboratory databases and knowledge bases. The AI assistant can query ProjectFlow (gene transformation metrics), iCal Inventory (media usage), and uploaded documents to answer research questions, generate data exports, and create visualizations—all through conversational queries. As a secondary capability, it provides browser-based secure file transfer for equipment computers that cannot install Microsoft Teams, using client-side RSA-2048 encryption.
 
-### Primary Use Case: Equipment Data Transfer
+### Primary Use Case: Agentic AI Assistant for Lab Data
 
-**Problem**: Laboratory equipment computers generate sensitive experimental data but cannot use Microsoft Teams due to:
-- No Teams licenses for equipment computers (budget constraint)
-- IT policy restrictions on instrument PC software installation
-- Air-gapped or restricted networks (compliance/security requirements)
-- Shared equipment stations (no personal Microsoft accounts)
+**Problem**: Laboratory teams need instant answers from fragmented data sources
+- **Multiple disconnected databases**: ProjectFlow (tasks/metrics), iCal (inventory), protocols (PDFs/DOCX)
+- **Manual data extraction**: Researchers run SQL queries or export CSVs manually
+- **Time-consuming analysis**: Generate charts in Excel for every presentation
+- **No unified interface**: Must check 3+ systems to answer "How is GRF4 performing?"
+- **Equipment data transfer gap**: Cannot use Teams on instrument computers
+- **Context loss**: Files uploaded to network drives with no explanation
 
-**Current Workaround**: Network drive file sharing (Z:\LabData\Shared\)
-- ❌ **Unencrypted**: Proprietary gene data stored in plaintext
-- ❌ **No access control**: Any employee can browse entire shared drive
-- ❌ **No audit trail**: Cannot track who accessed which files
-- ❌ **No notifications**: Manual checking required, workflow delays
-- ❌ **No context**: Files named `data_final_v3_REAL.xlsx` with zero explanation
-- ❌ **Security risk**: Intellectual property exposed to unauthorized access
+**Current Workaround**: Manual queries + network drive file sharing
+- ❌ **Fragmented access**: Check ProjectFlow DB, then iCal, then protocol folder
+- ❌ **No natural language**: Must know SQL or navigate complex UIs
+- ❌ **Manual exports**: Copy data to Excel, create charts, attach to emails
+- ❌ **No AI assistance**: Cannot ask "Compare GRF4 vs GRF6 transformation rates"
+- ❌ **Unencrypted transfers**: Network drive exposes proprietary data
+- ❌ **No intelligence**: Systems don't "understand" research questions
 
-**This Application's Solution**: Browser-based encrypted transfer requiring no installation
-- ✅ **Equipment computer compatible**: Works in any modern browser
-- ✅ **E2E encrypted**: Files encrypted before upload, server cannot decrypt
-- ✅ **Access controlled**: Only authorized team members can decrypt files
-- ✅ **Full audit trail**: Every upload/download logged with timestamp + user
-- ✅ **Real-time notifications**: Instant SocketIO alerts when data ready
-- ✅ **Contextual**: Files attached to conversations with explanations
-- ✅ **AI analysis**: Automatic data summarization and chart generation
+**This Application's Solution**: AI-powered unified data interface
+- ✅ **Natural language queries**: "What genes have highest TF%?" → instant answer
+- ✅ **Multi-database integration**: Single query across ProjectFlow + iCal + documents
+- ✅ **Automatic exports**: AI generates CSV + charts without manual work
+- ✅ **RAG knowledge base**: Upload protocols/papers, ask questions via semantic search
+- ✅ **Streaming responses**: Real-time token-by-token answers (typewriter effect)
+- ✅ **Agentic query routing**: Bot decides RAG vs ProjectFlow vs iCal automatically
+- ✅ **Equipment compatible**: Browser-based, works on any computer
+- ✅ **Secure file transfer**: E2E encrypted uploads as secondary feature
 
 ### Purpose
-- **Secure equipment data transfer** from computers that cannot install Teams
-- **Eliminate network drive security risks** (unencrypted, uncontrolled access)
-- **AI-powered data analysis** via natural language queries to proprietary databases
+- **Agentic AI assistant** for natural language access to laboratory data
+- **Multi-database integration** querying ProjectFlow (gene metrics), iCal (inventory), and documents
+- **RAG knowledge base** with semantic search across protocols, papers, and lab documentation
+- **Automatic data exports** generating CSV files and matplotlib charts from query results
+- **Real-time streaming responses** with token-by-token LLM output for improved UX
+- **Intelligent query routing** automatically selecting RAG vs database sources
+- **Secure file transfer** from equipment computers that cannot install Teams (secondary feature)
 - **Zero server access** to message content through end-to-end encryption
-- **Real-time streaming responses** with typewriter effect for improved UX
-- **Multi-database integration** connecting ProjectFlow (lab tasks) and iCal Inventory (media tracking)
-- **Document knowledge base** supporting PDF, DOCX, TXT for RAG
-- **Automatic export generation** with CSV downloads and matplotlib charts
 
 ### Network Drive Security Analysis
 
@@ -1913,35 +1893,38 @@ Equipment PC (has browser)
 
 **Important**: This is **NOT** positioned as a "Teams replacement" or "chat app"
 
-**Official Positioning**: "Secure Equipment Data Transfer System with AI Analysis"
-- Primary function: Browser-based encrypted file upload from equipment computers
-- AI analysis: Automatic data summarization and multi-database queries (RAG feature)
-- Communication: Collaborative data review (not "chat"—workflow coordination)
-- Compliance: Full audit trail, encrypted storage, access controls
+**Official Positioning**: "Agentic RAG System for Laboratory Data Analysis"
+- Primary function: AI assistant with natural language access to lab databases and documents
+- Multi-database queries: Unified interface for ProjectFlow, iCal, and knowledge base
+- Automatic analytics: Generate exports, charts, and summaries without manual work
+- Secure communication: Browser-based file transfer for equipment computers (ancillary feature)
+- Compliance: Full audit trail, bot logs retained, encrypted file transfers
 
 **Why This Matters**:
-- Management approval easier for "security tool" than "unauthorized chat app"
-- Justifies SocketIO real-time infrastructure ("instant notifications for data uploads")
-- AI features appear as "over-engineered RAG" rather than "chat disguised as RAG"
-- Addresses documented security problem (network drive) vs creating new tool
+- Management approval easier for "AI productivity tool" than "chat app"
+- Justifies SocketIO real-time infrastructure ("streaming LLM responses for better UX")
+- Chat features appear as "collaborative query refinement" not "messaging platform"
+- Addresses documented productivity gap (fragmented data access) not just file transfer
+- File transfer is "necessary for AI to analyze equipment data" not primary purpose
 
 **Messaging to Management**:
-> "We built a web-based system to securely transfer data from equipment computers that can't install Teams. Instead of using the unencrypted network drive—where anyone can see proprietary gene data—files are end-to-end encrypted and only accessible to authorized team members. As a bonus, it includes an AI assistant that can query our lab databases and auto-analyze uploaded data."
+> "We built an AI assistant that provides natural language access to our lab databases. Ask 'What genes have highest TF%?' and get instant answers with charts—no SQL, no manual Excel work. It queries ProjectFlow for transformation metrics, iCal for inventory, and uploaded protocols via RAG. Since equipment computers can't install Teams, it also provides secure browser-based file transfer so the AI can analyze equipment data. All bot interactions are logged for compliance."
 
 **NOT**:
 > ~~"We want to replace Teams with our own chat app"~~
+> ~~"We built a secure file transfer system"~~
 
 ### Development Objectives
 
 This application was developed to:
-1. **Solve equipment data transfer security gap**: Eliminate unencrypted network drive usage
-2. **Provide audit trail**: Track all file access for compliance and IP protection
-3. **Enable real-time workflow**: Instant notifications when equipment data ready
-4. **Unify data access**: Single AI interface for multiple lab databases (ProjectFlow, iCal)
-5. **Eliminate manual data export**: Bot auto-generates CSV + charts for presentations
-6. **Improve response time**: Streaming LLM reduces perceived latency from 10s to 1s
-7. **Enable self-service analytics**: Researchers query data via natural language, no SQL needed
-8. **Support knowledge management**: RAG system makes lab protocols searchable
+1. **Unify data access**: Single AI interface for multiple lab databases (ProjectFlow, iCal, documents)
+2. **Enable self-service analytics**: Researchers query data via natural language, no SQL/Excel needed
+3. **Eliminate manual exports**: Bot auto-generates CSV + charts from database queries
+4. **Support knowledge management**: RAG system makes lab protocols and papers searchable
+5. **Improve response time**: Streaming LLM reduces perceived latency from 10s to 1s
+6. **Enable agentic behavior**: Bot automatically routes queries to correct data source
+7. **Solve equipment data transfer gap**: Secure file upload from computers without Teams (secondary)
+8. **Provide audit trail**: Track all AI queries and file transfers for compliance
 
 The developer (100% wet lab scientist with AI assistance) identified that:
 - **Equipment computers cannot use Teams** (licensing, policy, network restrictions)

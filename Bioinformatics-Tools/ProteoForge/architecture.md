@@ -175,12 +175,7 @@ graph TD
     K -- No --> L[Return Best Attempt]
     I --> M[Validation Report + Download]
     L --> M
-    style A fill:#e1f5ff
-    style D fill:#fff4e1
-    style E fill:#e1f5ff
-    style I fill:#d4edda
-    style J fill:#fff3cd
-    style M fill:#d4edda
+  
 ```
 
 ### System Components

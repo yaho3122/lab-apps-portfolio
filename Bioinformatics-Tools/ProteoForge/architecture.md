@@ -264,7 +264,7 @@ Traditional fusion site selection relies on **1D sequence alignment** (BLAST, Cl
 
 **Example Use Case**:
 ```
-Scaffold: Cas12a nuclease (1300 aa)
+Scaffold: Cryptic Cas12a nuclease (1300 aa)
 Donor:    LbCas12a variant (1250 aa)
 Goal:     Swap PAM-interacting domain (PIxD) without breaking RuvC catalytic domain
 

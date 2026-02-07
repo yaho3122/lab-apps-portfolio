@@ -634,7 +634,7 @@ ORGANISMS = {
 
 ```python
 jobs_db[job_id] = {
-    'name': 'Rice CRISPR Optimization',
+    'name': 'Rice KSM1 Optimization',
     'status': 'SUCCESS',               # PENDING, RUNNING, SUCCESS, FAILURE
     'status_message': 'Optimization completed successfully.',
     'result': {
@@ -661,7 +661,7 @@ jobs_db[job_id] = {
         'mode': 'thorough',
         'num_runs': 3,
         'organism': 'Rice (Oryza sativa Japonica)',
-        'job_name': 'Rice CRISPR Optimization',
+        'job_name': 'Rice KSM1 Optimization',
         'validation': {
             'results': {...},           # 9 validation checks
             'summary': {...}
@@ -808,7 +808,7 @@ def fast_non_dominated_sort(population):
 ```json
 {
     "sequence": "ATGGCTAGC...",
-    "job_name": "Rice CMS1 Optimization",
+    "job_name": "Rice KSM1 Optimization",
     "mode": "thorough",
     "organism": "rice",
     "avoid_sites": ["GAATTC", "GGATCC"],
@@ -832,7 +832,7 @@ def fast_non_dominated_sort(population):
 **Response** (Running):
 ```json
 {
-    "name": "Rice CMS1 Optimization",
+    "name": "Rice KSM1 Optimization",
     "status": "RUNNING",
     "status_message": "Run 2/3, Gen 47/100",
     "result": null
@@ -842,7 +842,7 @@ def fast_non_dominated_sort(population):
 **Response** (Success):
 ```json
 {
-    "name": "Rice CMS1 Optimization",
+    "name": "Rice KSM1 Optimization",
     "status": "SUCCESS",
     "status_message": "Optimization completed successfully.",
     "result": {
@@ -1107,8 +1107,44 @@ This application was developed by a **100% wet lab scientist with no prior softw
 This represents a sophisticated bioinformatics tool that rivals commercial offerings, built through AI-assisted development by a domain expert. The system handles real production workloads and generates sequences suitable for gene synthesis vendors.
 
 ---
+## Feburary 2026 Update: Dockerization and Open Sharing
 
-**Last Updated**: January 2026  
-**Version**: 1.0  
+**Hugging Face Deployment:**
+The Codon_OPT application is now prepared for deployment as a Docker container and will be uploaded to Hugging Face Spaces. This enables easy sharing and reproducibility for the broader scientific community.
+
+**Benefits for the Community:**
+- Scientists can launch, track, and retrieve optimization jobs from anywhere, with no local setup required.
+- Dockerization ensures consistent environments and easy updates.
+- The app is now positioned as an open, community-driven tool for plant codon optimization and synthetic biology workflows.
+
+**Motivation for SQLite (spl) Implementation:**
+- SQLite was chosen to support robust, concurrent, multi-user access in a containerized environment.
+- File-based solutions (like shelve/lock) are not suitable for Docker or cloud deployment due to concurrency and persistence issues.
+- The new SQL backend ensures data integrity and reliability for all users accessing the app via Hugging Face Spaces.
+
+
+**Schema:**
+```sql
+CREATE TABLE IF NOT EXISTS jobs (
+    job_id TEXT PRIMARY KEY,
+    name TEXT,
+    status TEXT,
+    status_message TEXT,
+    result TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Benefits:**
+- Improved reliability and data integrity
+- Easier to query, update, and manage jobs
+- No risk of stale lock files or shelve corruption
+- Scalable for multi-user and concurrent access
+
+This update modernizes the backend and prepares Codon_OPT for more robust deployment scenarios.
+
+**Last Updated**: February 2026  
+**Version**: 1.1  
 **Port**: 5012  
 **Maintained by**: Laboratory Scientist with AI Assistance
+

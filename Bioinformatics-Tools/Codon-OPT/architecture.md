@@ -129,11 +129,7 @@ graph TB
         AI --> AP
     end
     
-    style I fill:#ff6b6b
-    style L fill:#4ecdc4
-    style M fill:#ffe66d
-    style O fill:#a8e6cf
-    style AO fill:#95e1d3
+  
 ```
 
 ---
@@ -179,10 +175,7 @@ graph LR
     D --> J
     J --> V
     
-    style A fill:#ff6b6b
-    style E fill:#ffe66d
-    style P fill:#a8e6cf
-    style T fill:#95e1d3
+   
 ```
 
 ### 2. NSGA-III Optimization Workflow
@@ -260,11 +253,7 @@ flowchart TD
     AT --> AU[Frontend Polls /status/<job_id>]
     AU --> AV[Display Results]
     
-    style O fill:#ffe6e6
-    style S fill:#e6f3ff
-    style Z fill:#fff4e6
-    style AQ fill:#e6ffe6
-    style AS fill:#f0e6ff
+  
 ```
 
 ### 3. Multi-Objective Fitness Evaluation
@@ -331,10 +320,7 @@ flowchart TD
     
     AM --> AN[Individual.objectives = harmony, context, -outlier]
     
-    style O fill:#d4edda
-    style W fill:#cce5ff
-    style AL fill:#f8d7da
-    style AN fill:#fff3cd
+
 ```
 
 ### 4. Validation System Architecture
@@ -426,15 +412,7 @@ flowchart LR
     BA -->|Yes| BB[Status: Good]
     BA -->|No| BC[Status: Needs Work]
     
-    style C fill:#d4edda
-    style G fill:#cce5ff
-    style K fill:#fff3cd
-    style P fill:#f8d7da
-    style U fill:#e2e3e5
-    style AA fill:#ffeaa7
-    style AH fill:#dfe6e9
-    style AM fill:#74b9ff
-    style AR fill:#a29bfe
+   
 ```
 
 ---

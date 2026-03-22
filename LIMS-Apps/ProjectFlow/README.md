@@ -90,6 +90,8 @@ ProjectFlow provides a sleek, professional interface featuring backdrop blurs an
    ```bash
    python app.py
    ```
+7. Default ID/PW
+   admin/admin
 
 ## 🛠 Technology Stack
 *   **Backend:** Python (Flask)

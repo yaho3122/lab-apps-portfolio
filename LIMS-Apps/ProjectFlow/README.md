@@ -42,6 +42,7 @@ ProjectFlow provides a sleek, professional interface featuring backdrop blurs an
 *   **Monthly Oversight:** A high-level grid view for long-term planning, featuring personnel initials and project status indicators.
     ![Monthly Calendar View](assets/01-01.Calendar_monthly.png)
 *   **Weekly Coordination:** A detailed 7-day layout that provides significantly more vertical space for high-density task lists, ideal for daily lab management.
+  
     ![Weekly Task View](assets/01-02.Calendar_weekly.png)
 *   **Daily Detail:** A focused perspective on a single day’s requirements, displaying full task descriptions and expanded personnel assignments.
     ![Daily Detail View](assets/01-03.Calendar_daily.png)

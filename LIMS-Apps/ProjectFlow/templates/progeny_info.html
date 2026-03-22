@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+{% block title %}Progeny Info{% endblock %}
+{% block content %}
+<div class="main-content">
+    <div class="container-fluid">
+        <h1 class="my-4">Progeny Info</h1>
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Progeny Spreadsheet</h5>
+                <div>
+                    {% if session.get('role') in ['admin', 'editor'] %}
+                    <button id="addColumn" class="btn btn-primary btn-sm">Add Column</button>
+                    <button id="addRow" class="btn btn-primary btn-sm">Add Row</button>
+                    {% endif %}
+                    <button id="exportCsv" class="btn btn-success btn-sm">Export to CSV</button>
+                    {% if session.get('role') in ['admin', 'editor'] %}
+                    <button id="saveData" class="btn btn-info btn-sm">Save Data</button>
+                    <form action="{{ url_for('import_progeny_template') }}" method="post" enctype="multipart/form-data" style="display: inline-block;">
+                        <input type="file" name="file" accept=".csv" required>
+                        <button type="submit" class="btn btn-success btn-sm">Import Template</button>
+                    </form>
+                    <input type="file" id="bulkUploadInput" multiple accept=".html" style="display: none;">
+                    <button id="bulkUploadBtn" class="btn btn-success btn-sm">Bulk Upload HTML</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="progeny-filters">
+                <div class="form-group">
+                    <label for="filterProgenyProjectName">Filter by Project Name:</label>
+                    <select id="filterProgenyProjectName" class="form-control">
+                        <option value="">All</option>
+                        {% for name in unique_project_names %}
+                            <option value="{{ name }}" {% if request.args.get('filter_project_name') == name %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterProgenyTrait">Filter by Trait:</label>
+                    <select id="filterProgenyTrait" class="form-control">
+                        <option value="">All</option>
+                        {% for trait in unique_traits %}
+                            <option value="{{ trait }}" {% if request.args.get('filter_trait') == trait %}selected{% endif %}>{{ trait }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterGeneration">Filter by Generation:</label>
+                    <select id="filterGeneration" class="form-control">
+                        <option value="">All</option>
+                        {% for gen in unique_generations %}
+                            <option value="{{ gen }}" {% if request.args.get('filter_generation') == gen %}selected{% endif %}>{{ gen }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filterPlantId">Filter by Plant ID:</label>
+                    <input type="text" id="filterPlantId" class="form-control" placeholder="Enter Plant ID">
+                </div>
+                <button id="applyFilter" class="btn btn-primary btn-sm">Apply Filter</button>
+                <button id="clearFilter" class="btn btn-secondary btn-sm">Clear Filter</button>
+            </div>
+            <div class="table-responsive">
+                <table id="spreadsheet" class="table table-bordered table-sm">
+                    {% if data %}
+                    <thead>
+                        <tr>
+                            {% for header in data[0] %}
+                                <th {% if loop.index > 3 and session.get('role') in ['admin', 'editor'] %}contenteditable="true"{% endif %}>{{ header }}</th>
+                            {% endfor %}
+                            {% if session.get('role') in ['admin', 'editor'] %}
+                            <th>Actions</th> <!-- New header for delete button -->
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data[1:] %}
+                        <tr>
+                            {% for cell in row %}
+                                {% set column_header = data[0][loop.index0] %}
+                                {% if column_header == 'Screening' %}
+                                    <td>
+                                        <select {% if session.get('role') == 'viewer' %}disabled{% endif %}>
+                                            <option value="None" {% if cell == 'None' %}selected{% endif %}>None</option>
+                                            <option value="T7" {% if cell == 'T7' %}selected{% endif %}>T7</option>
+                                            <option value="ddPCR" {% if cell == 'ddPCR' %}selected{% endif %}>ddPCR</option>
+                                            <option value="Sanger" {% if cell == 'Sanger' %}selected{% endif %}>Sanger</option>
+                                            <option value="Amp-seq" {% if cell == 'Amp-seq' %}selected{% endif %}>Amp-seq</option>
+                                            <option value="Other" {% if cell == 'Other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </td>
+                                {% elif column_header == 'Link' %}
+                                    <td>
+                                        {% if cell %}
+                                            <a href="{{ url_for('view_progeny_edit_data', filename=cell) }}" target="_blank">{{ cell }}</a>
+                                        {% elif session.get('role') in ['admin', 'editor'] %}
+                                            <form class="upload-form" enctype="multipart/form-data">
+                                                <input type="file" name="file" accept=".html" class="file-input">
+                                                <input type="hidden" name="project_name" value="{{ row[0] }}">
+                                                <input type="hidden" name="row_id" value="{{ row[6] }}"> {# DNA ID is at index 6 #}
+                                                <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+                                            </form>
+                                        {% else %}
+                                            <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                {% elif column_header in ['gDNA', 'PCR', 'Purification', 'Edit', 'Seed', 'Trash'] %}
+                                    <td><input type="checkbox" {% if cell == 'True' %}checked{% endif %} {% if session.get('role') == 'viewer' %}disabled{% endif %}></td>
+                                {% else %}
+                                    <td {% if loop.index0 >= 3 and session.get('role') in ['admin', 'editor'] %}contenteditable="true"{% endif %}>{{ cell }}</td> {# Make all data cells editable #}
+                                {% endif %}
+                            {% endfor %}
+                            {% if session.get('role') in ['admin', 'editor'] %}
+                            <td>
+                                <button class="btn btn-danger btn-sm delete-row-btn" data-id="{{ row[6] }}" data-project-name="{{ row[0] }}">Delete</button> {# DNA ID is at index 6 #}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    {% else %}
+                    <thead>
+                        <tr>
+                            <th contenteditable="true">Project Name</th>
+                            <th contenteditable="true">Project Description</th>
+                            <th contenteditable="true">Trait</th>
+                            <th contenteditable="true">Generation</th>
+                            <th contenteditable="true">Plant ID</th>
+                            <th contenteditable="true">Value</th>
+                            <th contenteditable="true">DNA ID</th>
+                            <th contenteditable="true">gDNA</th>
+                            <th contenteditable="true">PCR</th>
+                            <th contenteditable="true">Purification</th>
+                            <th contenteditable="true">Conc</th>
+                            <th contenteditable="true">Screening</th>
+                            <th contenteditable="true">Edit</th>
+                            <th contenteditable="true">Edit info</th>
+                            <th contenteditable="true">Link</th>
+                            <th contenteditable="true">Seed</th>
+                            <th contenteditable="true">Trash</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const spreadsheet = document.getElementById('spreadsheet');
+    const addColumnBtn = document.getElementById('addColumn');
+    const addRowBtn = document.getElementById('addRow');
+    const exportCsvBtn = document.getElementById('exportCsv');
+    const saveDataBtn = document.getElementById('saveData');
+    const bulkUploadBtn = document.getElementById('bulkUploadBtn');
+    const bulkUploadInput = document.getElementById('bulkUploadInput');
+
+    bulkUploadBtn.addEventListener('click', function() {
+        console.log('Bulk Upload HTML button clicked.');
+        bulkUploadInput.click();
+    });
+
+    bulkUploadInput.addEventListener('change', function() {
+        console.log('Bulk Upload HTML input changed.');
+        const files = bulkUploadInput.files;
+        if (files.length === 0) {
+            console.log('No files selected for bulk upload.');
+            return;
+        }
+
+        const formData = new FormData();
+        for (const file of files) {
+            formData.append('files[]', file);
+        }
+
+        console.log('Sending bulk upload request...');
+        fetch('/bulk_upload_progeny_edit_data', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            console.log('Bulk upload response received.', response);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Bulk upload data processed.', data);
+            if (data.success) {
+                alert('Bulk upload successful!');
+                window.location.reload();
+            } else {
+                alert('Bulk upload failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error during bulk upload fetch:', error);
+            alert('An error occurred during bulk upload.');
+        });
+    });
+
+    // Make cells editable
+    spreadsheet.addEventListener('dblclick', function(e) {
+        if (e.target.tagName === 'TD' || e.target.tagName === 'TH') {
+            e.target.setAttribute('contenteditable', 'true');
+            e.target.focus();
+        }
+    });
+
+    spreadsheet.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const currentCell = e.target;
+            const currentCellIndex = currentCell.cellIndex;
+            const currentRow = currentCell.parentElement;
+            const nextRow = currentRow.nextElementSibling;
+            if (nextRow) {
+                const nextCell = nextRow.cells[currentCellIndex];
+                if (nextCell) {
+                    nextCell.focus();
+                    nextCell.setAttribute('contenteditable', 'true');
+                }
+            }
+        }
+    });
+
+    // Add new row
+    addRowBtn.addEventListener('click', function() {
+        console.log('Add Row button clicked.');
+        const newRow = spreadsheet.querySelector('tbody').insertRow();
+        const numCols = spreadsheet.querySelector('thead tr').cells.length;
+        for (let i = 0; i < numCols; i++) {
+            const newCell = newRow.insertCell();
+            newCell.textContent = '';
+        }
+        console.log('New row added.');
+    });
+
+    // Add new column
+    addColumnBtn.addEventListener('click', function() {
+        const newHeaderName = prompt("Enter the name for the new column:");
+        if (!newHeaderName) return;
+
+        const newHeader = document.createElement('th');
+        newHeader.setAttribute('contenteditable', 'true');
+        newHeader.textContent = newHeaderName;
+        
+        // Insert before Actions column
+        const headerRow = spreadsheet.querySelector('thead tr');
+        headerRow.insertBefore(newHeader, headerRow.lastElementChild);
+
+        for (const row of spreadsheet.querySelectorAll('tbody tr')) {
+            const newCell = row.insertCell(row.cells.length - 1);
+            newCell.setAttribute('contenteditable', 'true');
+            newCell.textContent = '';
+        }
+        alert('New column added. Remember to click "Save Data" to persist changes.');
+    });
+
+    // Export to CSV
+    exportCsvBtn.addEventListener('click', function() {
+        console.log('Export to CSV button clicked.');
+        const rows = Array.from(spreadsheet.querySelectorAll('tr'));
+        console.log('Rows for CSV export:', rows);
+        const csvContent = rows.map(row => {
+            const cells = Array.from(row.querySelectorAll('th, td'));
+            return cells.map((cell, index) => {
+                const header = spreadsheet.querySelector('thead tr th:nth-child(' + (index + 1) + ')').textContent;
+                if (header === 'Link') {
+                    const link = cell.querySelector('a');
+                    if (link) {
+                        return link.textContent;
+                    }
+                    else {
+                        return '';
+                    }
+                }
+                const input = cell.querySelector('input[type="checkbox"]');
+                if (input) {
+                    return input.checked ? 'Yes' : 'No';
+                }
+                const select = cell.querySelector('select');
+                if (select) {
+                    return select.value;
+                }
+                let cellText = cell.textContent.trim();
+                // Escape quotes and backticks
+                cellText = cellText.replace(/"/g, '""').replace(/`/g, '\`');
+                return `"${cellText}"`;
+            }).join(',');
+        }).join('\n');
+
+        console.log('Generated CSV content:', csvContent);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'progeny_info_export.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log('CSV export initiated.');
+    });
+
+    saveDataBtn.addEventListener('click', function() {
+        console.log('Save Data button clicked.');
+        const headerRows = Array.from(spreadsheet.querySelectorAll('thead tr'));
+        const bodyRows = Array.from(spreadsheet.querySelectorAll('tbody tr'));
+
+        const headerData = headerRows.map(row => {
+            const cells = Array.from(row.querySelectorAll('th'));
+            return cells.map(cell => cell.textContent);
+        });
+
+        const bodyData = bodyRows.map(row => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            return cells.map((cell, index) => {
+                const header = headerData[0][index]; // Get header from parsed headerData
+                if (header === 'Link') {
+                    const link = cell.querySelector('a');
+                    if (link) {
+                        return link.textContent;
+                    }
+                    else {
+                        return '';
+                    }
+                }
+                const input = cell.querySelector('input[type="checkbox"]');
+                if (input) {
+                    return input.checked ? 'True' : 'False';
+                }
+                const select = cell.querySelector('select');
+                if (select) {
+                    return select.value;
+                }
+                return cell.textContent;
+            });
+        });
+
+        let data = headerData.concat(bodyData);
+
+        // Remove the "Actions" column from the data
+        data = data.map(row => row.slice(0, -1));
+
+        console.log('Sending save data request...', data);
+        fetch('/save_progeny_info', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then(response => {
+            console.log('Save data response received.', response);
+            if (response.ok) {
+                alert('Data saved successfully!');
+            }
+            else {
+                alert('Failed to save data.');
+            }
+        }).catch(error => {
+            console.error('Error during save data fetch:', error);
+            alert('An error occurred while saving data.');
+        });
+    });
+
+    const filterProgenyProjectNameSelect = document.getElementById('filterProgenyProjectName');
+    const filterProgenyTraitSelect = document.getElementById('filterProgenyTrait');
+    const filterGenerationSelect = document.getElementById('filterGeneration');
+    const applyFilterBtn = document.getElementById('applyFilter');
+    const clearFilterBtn = document.getElementById('clearFilter');
+
+    applyFilterBtn.addEventListener('click', function() {
+        const projectName = filterProgenyProjectNameSelect.value;
+        const trait = filterProgenyTraitSelect.value;
+        const generation = filterGenerationSelect.value;
+        let url = '/progeny_info?';
+        if (projectName) {
+            url += `filter_project_name=${encodeURIComponent(projectName)}&`;
+        }
+        if (trait) {
+            url += `filter_trait=${encodeURIComponent(trait)}&`;
+        }
+        if (generation) {
+            url += `filter_generation=${encodeURIComponent(generation)}&`;
+        }
+        window.location.href = url.slice(0, -1); // Remove trailing '&'
+    });
+
+    clearFilterBtn.addEventListener('click', function() {
+        filterProgenyProjectNameSelect.value = '';
+        filterProgenyTraitSelect.value = '';
+        filterGenerationSelect.value = '';
+        // Clear Plant ID filter as well
+        const filterPlantIdInput = document.getElementById('filterPlantId');
+        if (filterPlantIdInput) {
+            filterPlantIdInput.value = '';
+        }
+        window.location.href = '/progeny_info';
+    });
+
+    // Plant ID client-side filtering
+    const filterPlantIdInput = document.getElementById('filterPlantId');
+    if (filterPlantIdInput) {
+        filterPlantIdInput.addEventListener('keyup', function() {
+            const filterValue = this.value.toLowerCase();
+            const rows = spreadsheet.querySelectorAll('tbody tr');
+            const headers = Array.from(spreadsheet.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            const plantIdColIndex = headers.indexOf('Plant ID'); // Assuming 'Plant ID' is the header
+
+            if (plantIdColIndex === -1) {
+                console.warn("Plant ID column not found. Please ensure the header is exactly 'Plant ID'.");
+                return;
+            }
+
+            rows.forEach(row => {
+                const cell = row.cells[plantIdColIndex];
+                if (cell) {
+                    const cellText = cell.textContent.toLowerCase();
+                    if (cellText.includes(filterValue)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    }
+
+    // Set filter values from URL on page load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('filter_project_name')) {
+        filterProgenyProjectNameSelect.value = urlParams.get('filter_project_name');
+    }
+    if (urlParams.has('filter_trait')) {
+        filterProgenyTraitSelect.value = urlParams.get('filter_trait');
+    }
+    if (urlParams.has('filter_generation')) {
+        filterGenerationSelect.value = urlParams.get('filter_generation');
+    }
+
+    // Delete row functionality
+    spreadsheet.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-row-btn')) {
+            const rowId = e.target.dataset.id;
+            const projectName = e.target.dataset.projectName; // Get project name
+            if (confirm(`Are you sure you want to delete the row with ID: ${rowId} for project: ${projectName}?`)) {
+                fetch('/delete_progeny_info_row', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: rowId, project_name: projectName }) // Pass project name
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Row deleted successfully!');
+                        // Reload the page to reflect changes from updated progeny_info.json
+                        window.location.reload();
+                    }
+                    else {
+                        alert('Failed to delete row: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the row.');
+                });
+            }
+        }
+    });
+
+    spreadsheet.addEventListener('submit', function(e) {
+        if (e.target.classList.contains('upload-form')) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const cell = form.parentElement;
+
+            fetch('/upload_progeny_edit_data', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('File uploaded successfully!');
+                    const link = document.createElement('a');
+                    link.href = `/view_progeny_edit_data/${data.filename}`;
+                    link.target = '_blank';
+                    link.textContent = data.filename;
+                    cell.innerHTML = '';
+                    cell.appendChild(link);
+                }
+                else {
+                    alert('Failed to upload file: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while uploading the file.');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

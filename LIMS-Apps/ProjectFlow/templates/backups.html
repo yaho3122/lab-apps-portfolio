@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backups</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Backup Files</h1>
+        <table class="table mt-3">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Size (bytes)</th>
+                    <th>Created</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for backup in backups %}
+                <tr>
+                    <td>{{ backup.filename }}</td>
+                    <td>{{ backup.size }}</td>
+                    <td>{{ backup.created }}</td>
+                    <td><a href="{{ backup.download_link }}" class="btn btn-primary">Download</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

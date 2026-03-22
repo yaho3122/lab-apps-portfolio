@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Tasks for {{ date }}{% endblock %}
+{% block content %}
+    <div class="day-view-panel">
+        <h2>Tasks for {{ date }}</h2>
+        <div class="day-view-controls">
+            <a href="{{ url_for('index', view='calendar', date=date) }}" class="button">Back to Calendar</a>
+        </div>
+        <div class="tasks-list">
+            {% for task in tasks %}
+                <div class="task-item-detailed" style="border-left-color: {{ task.color if task.color else '#4a90e2' }};">
+                    <div class="task-header">
+                        <span class="task-project-name">{{ task.projectName if task.projectName else 'General Task' }}</span>
+                        <span class="task-name">{{ task.name }}</span>
+                    </div>
+                    <div class="task-description">
+                        {{ task.description }}
+                    </div>
+                    <div class="task-actions">
+                        {% if task_csv_status.get(task.id) %}
+                        <a href="{{ url_for('generate_csv', task_id=task.id) }}" class="download-csv-link">Download CSV</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <p>No tasks for this day.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

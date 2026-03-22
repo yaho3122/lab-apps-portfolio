@@ -1,0 +1,861 @@
+{% extends "base.html" %}
+{% block title %}Setup - ProjectFlow{% endblock %}
+{% block content %}
+<div class="main-content">
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1>System Setup & Administration</h1>
+        </div>
+
+    <div class="setup-grid">
+        <!-- Export Section -->
+        <div class="setup-card">
+            <h2>Export Data</h2>
+            <p>Download project and RS data in CSV format for external analysis.</p>
+            <div class="setup-actions">
+                <a href="{{ url_for('export_csv') }}" class="button">Export All Projects (CSV)</a>
+                <a href="{{ url_for('export_rs_data_csv') }}" class="button">Export RS Data (CSV)</a>
+            </div>
+        </div>
+
+        <!-- Import Section -->
+        <div class="setup-card">
+            <h2>Import Data</h2>
+            <div class="import-group">
+                <h3>Import RS Data</h3>
+                <form action="{{ url_for('import_rs_data') }}" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <input type="file" name="file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="button">Import RS CSV</button>
+                </form>
+            </div>
+            <div class="import-group mt-4">
+                <h3>Import Old Projects</h3>
+                <form action="{{ url_for('import_old_projects') }}" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <input type="file" name="file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="button button-secondary">Import Old Projects CSV</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Database Management -->
+        <div class="setup-card">
+            <h2>Database Management</h2>
+            <div class="restore-group">
+                <h3>Restore Database</h3>
+                <p class="text-danger small">Warning: Restoring will overwrite the current database.</p>
+                <form id="restoreForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <input type="file" name="backup_file" accept=".zip" required>
+                    </div>
+                    <button type="submit" class="button button-danger">Restore from Backup</button>
+                </form>
+            </div>
+            <div class="backup-actions mt-4">
+                <h3>Manual Backup</h3>
+                <button id="manualBackupBtn" class="button">Create Current Backup</button>
+            </div>
+        </div>
+
+        <!-- CSV Logic Guide -->
+        <div class="setup-card">
+            <h2>Label Logic Guide</h2>
+            <div class="logic-guide-item mb-3">
+                <strong>📌 Fixed Rows:</strong>
+                <p class="small text-muted mb-0">Generates a set number of labels (defined in 'Value') for every sub-project line.</p>
+            </div>
+            <div class="logic-guide-item mb-3">
+                <strong>🧬 Formula (v2 based):</strong>
+                <p class="small text-muted mb-0">Calculates labels based on transformation counts. Formula: <code>ceil((v2 / 6) * 1.1)</code>.</p>
+            </div>
+            <div class="logic-guide-item mb-3">
+                <strong>🌿 RS Entry Based:</strong>
+                <p class="small text-muted mb-0">Generates 1 label per plant recorded in RS description. Inherits 'Pre' structure if description is empty.</p>
+            </div>
+            <div class="logic-guide-item mb-3">
+                <strong>🧪 Germplasm B0:</strong>
+                <p class="small text-muted mb-0">Special multi-block logic (B0/B1/B2) with a multiplier set in the 'Value' field.</p>
+            </div>
+        </div>
+
+        <!-- Backups List -->
+        <div class="setup-card full-width">
+            <h2>Recent Backups</h2>
+            <div class="table-responsive">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Size (bytes)</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backupListBody">
+                        {% for backup in backups %}
+                        <tr>
+                            <td>{{ backup.filename }}</td>
+                            <td>{{ backup.size }}</td>
+                            <td>{{ backup.created }}</td>
+                            <td><a href="{{ backup.download_link }}" class="button small">Download</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- User Management -->
+        <div class="setup-card full-width">
+            <h2>User Management</h2>
+            <div class="row">
+                <div class="col-md-4 border-end">
+                    <h3>Add New User</h3>
+                    <form action="{{ url_for('add_user') }}" method="post">
+                        <div class="form-group mb-2">
+                            <label class="small">Username</label>
+                            <input type="text" name="username" class="w-100" required>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label class="small">Password</label>
+                            <input type="password" name="password" class="w-100" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="small">Role</label>
+                            <select name="role" class="w-100">
+                                <option value="viewer">Viewer (Read-only)</option>
+                                <option value="editor">Editor (Can add/edit projects)</option>
+                                <option value="admin">Admin (Full access)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="button w-100">Create User</button>
+                    </form>
+                </div>
+                <div class="col-md-8 ps-4">
+                    <h3>Existing Users</h3>
+                    <div class="table-responsive">
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td><span class="badge {% if user.role == 'admin' %}bg-danger{% elif user.role == 'editor' %}bg-primary{% else %}bg-secondary{% endif %}">{{ user.role }}</span></td>
+                                    <td>
+                                        <button class="button small button-secondary change-password-btn" data-id="{{ user.id }}" data-username="{{ user.username }}">Change Password</button>
+                                        {% if user.username != session.get('username') %}
+                                        <form action="{{ url_for('delete_user', user_id=user.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Delete user {{ user.username }}?')">
+                                            <button type="submit" class="button small button-danger">Delete</button>
+                                        </form>
+                                        {% else %}
+                                        <span class="small text-muted ms-2">(Current User)</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lab Member Management -->
+        <div class="setup-card full-width">
+            <h2>Lab Member Management</h2>
+            <div class="row">
+                <div class="col-md-4 border-end">
+                    <h3>Add Lab Member</h3>
+                    <p class="small text-muted">This is for task assignment and is separate from login users.</p>
+                    <div class="form-group mb-3">
+                        <label class="small">Name</label>
+                        <input type="text" id="newLabMemberName" class="w-100" placeholder="e.g., John Doe">
+                    </div>
+                    <button id="addLabMemberBtn" class="button w-100">Add Member</button>
+                </div>
+                <div class="col-md-8 ps-4">
+                    <h3>Current Personnel</h3>
+                    <div id="labMemberList" class="d-flex flex-wrap gap-2">
+                        {% for member in lab_members %}
+                        <div class="badge bg-light text-dark p-2 border d-flex align-items-center gap-2">
+                            {{ member }}
+                            <span class="text-danger cursor-pointer delete-member-btn" data-name="{{ member }}" style="font-weight:bold; cursor:pointer;">&times;</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Management -->
+        <div class="setup-card full-width">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Workflow Configuration</h2>
+                <button id="addNewWorkflowBtn" class="button">Add New Project Type</button>
+            </div>
+            <p>Manage project types and their automated task schedules (offsets).</p>
+            
+            <div class="workflow-list mt-3">
+                {% for wf_id, wf_config in workflows.items() %}
+                <div class="workflow-item mb-5 p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="wf-title-group">
+                            <h3 class="mb-0">{{ wf_config.name }} <small class="text-muted">({{ wf_id }})</small></h3>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="view-toggle-group mr-3">
+                                <button class="button small button-secondary toggle-view-btn" data-wf="{{ wf_id }}">Switch to Table</button>
+                            </div>
+                            <button class="button small edit-wf-btn" data-id="{{ wf_id }}" data-config='{{ wf_config | tojson | safe }}'>Edit Workflow</button>
+                            <button class="button small button-danger delete-wf-btn" data-id="{{ wf_id }}">Delete</button>
+                        </div>
+                    </div>
+
+                    <!-- Card View (Default) -->
+                    <div id="cards-{{ wf_id }}" class="workflow-cards-deck">
+                        {% for task in wf_config.tasks %}
+                        <div class="task-card-mini edit-wf-btn" 
+                             data-id="{{ wf_id }}" 
+                             data-config='{{ wf_config | tojson | safe }}'
+                             data-index="{{ loop.index0 }}"
+                             title="Click to edit this task">
+                            <div class="task-card-header">
+                                <span class="step-number">{{ loop.index }}</span>
+                                <h4>{{ task.name }}</h4>
+                            </div>
+                            <div class="task-card-body">
+                                <div class="task-meta">
+                                    <span class="badge">Key: {{ task.key }}</span>
+                                    <span class="badge offset">+{{ task.offset.value }} {{ task.offset.unit }}</span>
+                                </div>
+                                <p class="task-card-desc">{{ task.description }}</p>
+                                {% if task.csv_config %}
+                                <div class="task-csv-info">
+                                    <small>📊 CSV: {{ task.csv_config.type }} ({{ task.csv_config.label }})</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if not loop.last %}
+                        <div class="task-connector">
+                            <i class="connector-arrow">→</i>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Table View (Hidden by default) -->
+                    <div id="table-{{ wf_id }}" class="table-responsive" style="display: none;">
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Task Name</th>
+                                    <th>Key</th>
+                                    <th>Offset</th>
+                                    <th>Description</th>
+                                    <th>CSV Logic</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in wf_config.tasks %}
+                                <tr>
+                                    <td>{{ task.name }}</td>
+                                    <td><code>{{ task.key }}</code></td>
+                                    <td>{{ task.offset.value }} {{ task.offset.unit }}</td>
+                                    <td class="small">{{ task.description }}</td>
+                                    <td class="small">{{ task.csv_config.type if task.csv_config else 'None' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Change Modal -->
+<div id="passwordModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Change Password: <span id="pwdModalUsername"></span></h2>
+            <button class="modal-close-button" id="closePwdModal">&times;</button>
+        </div>
+        <form id="passwordForm">
+            <input type="hidden" id="pwdUserId">
+            <div class="form-group">
+                <label for="new_password">New Password:</label>
+                <input type="password" id="new_password" required class="w-100">
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password:</label>
+                <input type="password" id="confirm_password" required class="w-100">
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="button">Update Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Workflow Editor Modal -->
+<div id="workflowModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2 id="wfModalTitle">Edit Workflow</h2>
+            <button class="modal-close-button" id="closeWfModal">&times;</button>
+        </div>
+        <form id="workflowForm" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden;">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="wf_id">Workflow ID (slug, e.g., 'transformation'):</label>
+                    <input type="text" id="wf_id" required class="w-100">
+                </div>
+                <div class="form-group">
+                    <label for="wf_name">Display Name:</label>
+                    <input type="text" id="wf_name" required class="w-100">
+                </div>
+                
+                <h3 class="mt-4 mb-3">Workflow Steps</h3>
+                <div id="tasksContainer">
+                    <!-- Tasks will be added here -->
+                </div>
+            </div>
+
+            <div class="modal-actions" style="justify-content: space-between;">
+                <button type="button" id="addTaskBtn" class="button button-secondary">+ Add Task</button>
+                <button type="submit" class="button">Save Workflow</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .workflow-item { 
+        background: var(--glass-bg); 
+        border-radius: 20px;
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+    }
+    
+    /* Card Deck Layout */
+    .workflow-cards-deck {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .task-card-mini {
+        background: white;
+        border-radius: 12px;
+        width: 220px;
+        padding: 15px;
+        border: 1px solid #eee;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transition: var(--transition);
+        cursor: pointer; /* Indicate clickability */
+    }
+
+    .task-card-mini:hover {
+        transform: translateY(-8px); /* More pronounced lift */
+        box-shadow: 0 12px 20px rgba(0,0,0,0.1);
+        border-color: var(--primary-color);
+    }
+
+    .task-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #f0f0f0;
+        padding-bottom: 8px;
+    }
+
+    .step-number {
+        background: var(--primary-gradient);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .task-card-header h4 {
+        font-size: 0.95rem;
+        margin: 0;
+        color: var(--text-main);
+    }
+
+    .task-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 8px;
+    }
+
+    .badge {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: #f0f2f5;
+        color: #636e72;
+        font-weight: 600;
+    }
+
+    .badge.offset {
+        background: #e1f5fe;
+        color: #0288d1;
+    }
+
+    .task-card-desc {
+        font-size: 0.8rem;
+        color: #636e72;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 10px;
+        height: 2.6em;
+    }
+
+    .task-csv-info {
+        border-top: 1px dashed #eee;
+        padding-top: 8px;
+        color: #00b894;
+        font-weight: 600;
+    }
+
+    .task-connector {
+        color: #b2bec3;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .task-row { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; position: relative; }
+    .remove-task { position: absolute; top: 10px; right: 10px; color: var(--danger-color); cursor: pointer; font-size: 1.2rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .p-3 { padding: 1rem; }
+    .border { border: 1px solid #dee2e6; }
+    .rounded { border-radius: 8px; }
+    .flex-1 { flex: 1; }
+    .min-w-150 { min-width: 150px; }
+    .x-small { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #95a5a6; }
+</style>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Password Change Logic ---
+    const passwordModal = document.getElementById('passwordModal');
+    const passwordForm = document.getElementById('passwordForm');
+    const closePwdModal = document.getElementById('closePwdModal');
+    const pwdModalUsername = document.getElementById('pwdModalUsername');
+    const pwdUserId = document.getElementById('pwdUserId');
+
+    document.querySelectorAll('.change-password-btn').forEach(btn => {
+        btn.onclick = () => {
+            pwdUserId.value = btn.dataset.id;
+            pwdModalUsername.textContent = btn.dataset.username;
+            document.getElementById('new_password').value = '';
+            document.getElementById('confirm_password').value = '';
+            passwordModal.style.display = 'flex';
+        };
+    });
+
+    closePwdModal.onclick = () => passwordModal.style.display = 'none';
+
+    passwordForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const newPwd = document.getElementById('new_password').value;
+        const confirmPwd = document.getElementById('confirm_password').value;
+
+        if (newPwd !== confirmPwd) {
+            alert('Passwords do not match!');
+            return;
+        }
+
+        const response = await fetch('/api/change_password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: pwdUserId.value,
+                password: newPwd
+            })
+        });
+
+        if (response.ok) {
+            alert('Password updated successfully!');
+            passwordModal.style.display = 'none';
+        } else {
+            const result = await response.json();
+            alert('Failed to update password: ' + (result.error || 'Unknown error'));
+        }
+    };
+
+    // --- Backup & Restore Logic ---
+    const restoreForm = document.getElementById('restoreForm');
+    if (restoreForm) {
+        restoreForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!confirm('Are you sure you want to restore the database? Current data will be overwritten.')) return;
+
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('/restore', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Database restored successfully!');
+                    window.location.reload();
+                } else {
+                    alert('Restore failed: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred during restoration.');
+            }
+        });
+    }
+
+    const manualBackupBtn = document.getElementById('manualBackupBtn');
+    if (manualBackupBtn) {
+        manualBackupBtn.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/backup');
+                const result = await response.json();
+                if (result.success) {
+                    alert('Backup created successfully!');
+                    window.location.reload();
+                } else {
+                    alert('Backup failed.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while creating backup.');
+            }
+        });
+    }
+
+    // --- View Toggle Logic ---
+    document.querySelectorAll('.toggle-view-btn').forEach(btn => {
+        btn.onclick = () => {
+            const wfId = btn.dataset.wf;
+            const cardsDiv = document.getElementById(`cards-${wfId}`);
+            const tableDiv = document.getElementById(`table-${wfId}`);
+            
+            if (cardsDiv.style.display === 'none') {
+                cardsDiv.style.display = 'flex';
+                tableDiv.style.display = 'none';
+                btn.textContent = 'Switch to Table';
+            } else {
+                cardsDiv.style.display = 'none';
+                tableDiv.style.display = 'block';
+                btn.textContent = 'Switch to Cards';
+            }
+        };
+    });
+
+    // --- Lab Member Management Logic ---
+    const addMemberBtn = document.getElementById('addLabMemberBtn');
+    const newMemberInput = document.getElementById('newLabMemberName');
+
+    if (addMemberBtn) {
+        addMemberBtn.onclick = async () => {
+            const name = newMemberInput.value.trim();
+            if (!name) return;
+            
+            const response = await fetch('/api/add_lab_member', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
+            });
+
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                const result = await response.json();
+                alert('Error: ' + result.error);
+            }
+        };
+    }
+
+    document.querySelectorAll('.delete-member-btn').forEach(btn => {
+        btn.onclick = async () => {
+            const name = btn.dataset.name;
+            if (!confirm(`Remove ${name} from personnel list?`)) return;
+            
+            const response = await fetch(`/api/delete_lab_member/${name}`, { method: 'POST' });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete member.');
+            }
+        };
+    });
+
+    // --- Workflow Management Logic ---
+    const workflowModal = document.getElementById('workflowModal');
+    const workflowForm = document.getElementById('workflowForm');
+    const tasksContainer = document.getElementById('tasksContainer');
+    const closeWfModal = document.getElementById('closeWfModal');
+    const addNewWorkflowBtn = document.getElementById('addNewWorkflowBtn');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+
+    let currentWorkflowId = null;
+
+    window.toggleCsvOptions = (select) => {
+        const optionsDiv = select.parentElement.querySelector('.csv-options');
+        const builderDiv = select.parentElement.parentElement.querySelector('.custom-logic-builder');
+        
+        if (select.value === 'none') {
+            optionsDiv.style.setProperty('display', 'none', 'important');
+            builderDiv.style.display = 'none';
+        } else if (select.value === 'custom') {
+            optionsDiv.style.setProperty('display', 'none', 'important');
+            builderDiv.style.display = 'block';
+        } else {
+            optionsDiv.style.setProperty('display', 'flex', 'important');
+            builderDiv.style.display = 'none';
+        }
+    };
+
+    window.toggleManualInput = (select) => {
+        const manualInput = select.nextElementSibling;
+        manualInput.style.display = (select.value === 'manual') ? 'block' : 'none';
+    };
+
+    function createEmptyTaskRow(task = {}, index = null) {
+        const div = document.createElement('div');
+        div.className = 'task-row';
+        if (index !== null) div.id = `task-row-${index}`;
+        div.innerHTML = `
+            <span class="remove-task" onclick="this.parentElement.remove()">&times;</span>
+            <div class="d-flex gap-2 mb-2">
+                <div class="flex-1">
+                    <label class="small">Name</label>
+                    <input type="text" class="task-name-input" value="${task.name || ''}" required>
+                </div>
+                <div class="flex-1">
+                    <label class="small">Key (e.g., 'start', 'rs')</label>
+                    <input type="text" class="task-key-input" value="${task.key || ''}" required>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mb-2">
+                <div class="flex-1">
+                    <label class="small">Offset Value</label>
+                    <input type="number" class="task-offset-value" value="${task.offset?.value ?? 0}" required>
+                </div>
+                <div class="flex-1">
+                    <label class="small">Unit</label>
+                    <select class="task-offset-unit">
+                        <option value="days" ${task.offset?.unit === 'days' ? 'selected' : ''}>Days</option>
+                        <option value="weeks" ${task.offset?.unit === 'weeks' ? 'selected' : ''}>Weeks</option>
+                    </select>
+                </div>
+            </div>
+            <div class="csv-logic-group p-2 mb-2 border rounded bg-light">
+                <label class="small font-weight-bold">CSV/Label Generation Logic</label>
+                <div class="d-flex gap-2 align-items-center">
+                    <select class="task-csv-type" onchange="toggleCsvOptions(this)">
+                        <option value="none" ${!task.csv_config ? 'selected' : ''}>None</option>
+                        <option value="fixed" ${task.csv_config?.type === 'fixed' ? 'selected' : ''}>Fixed Rows</option>
+                        <option value="formula" ${task.csv_config?.type === 'formula' ? 'selected' : ''}>Formula (v2 based)</option>
+                        <option value="rs_entries" ${task.csv_config?.type === 'rs_entries' ? 'selected' : ''}>RS Entry Based</option>
+                        <option value="germplasm_b0" ${task.csv_config?.type === 'germplasm_b0' ? 'selected' : ''}>Germplasm B0 Logic</option>
+                        <option value="germplasm_pre" ${task.csv_config?.type === 'germplasm_pre' ? 'selected' : ''}>Germplasm Pre Logic</option>
+                        <option value="germplasm_rs" ${task.csv_config?.type === 'germplasm_rs' ? 'selected' : ''}>Germplasm RS Logic</option>
+                        <option value="custom" ${task.csv_config?.type === 'custom' ? 'selected' : ''}>✨ Custom Logic Builder</option>
+                    </select>
+                    <div class="csv-options d-flex gap-2 flex-1" style="display: ${task.csv_config && task.csv_config.type !== 'custom' ? 'flex' : 'none'} !important;">
+                        <input type="text" class="task-csv-label" placeholder="Label" value="${task.csv_config?.label || ''}" style="width: 100px;">
+                        <input type="text" class="task-csv-value" placeholder="Value" value="${task.csv_config?.value || ''}" style="width: 80px;">
+                    </div>
+                </div>
+                
+                <!-- Custom Logic Builder Area -->
+                <div class="custom-logic-builder mt-2 p-3 border rounded bg-white" style="display: ${task.csv_config?.type === 'custom' ? 'block' : 'none'}">
+                    <h4 class="small mb-2 text-primary">Column Mapping (Column 5 is always #Count)</h4>
+                    <div class="d-flex gap-2 mb-2 flex-wrap">
+                        {% for i in range(1, 5) %}
+                        <div class="flex-1 min-w-150">
+                            <label class="x-small d-block">Col {{ i }} Source</label>
+                            <select class="col-source-{{ i }} small w-100" onchange="toggleManualInput(this)">
+                                <option value="sub_project" ${task.csv_config?.cols?.[{{ i-1 }}]?.source === 'sub_project' ? 'selected' : ''}>Sub-Project (Desc)</option>
+                                <option value="task_name" ${task.csv_config?.cols?.[{{ i-1 }}]?.source === 'task_name' ? 'selected' : ''}>Task Name</option>
+                                <option value="task_date" ${task.csv_config?.cols?.[{{ i-1 }}]?.source === 'task_date' ? 'selected' : ''}>Task Date</option>
+                                <option value="manual" ${task.csv_config?.cols?.[{{ i-1 }}]?.source === 'manual' ? 'selected' : ''}>Manual Text</option>
+                                <option value="none" ${task.csv_config?.cols?.[{{ i-1 }}]?.source === 'none' ? 'selected' : ''}>None</option>
+                            </select>
+                            <input type="text" class="col-manual-{{ i }} small w-100 mt-1" 
+                                   placeholder="Manual text..." 
+                                   style="display: ${task.csv_config?.cols?.[{{ i-1 }}]?.source === 'manual' ? 'block' : 'none'}"
+                                   value="${task.csv_config?.cols?.[{{ i-1 }}]?.value || ''}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <div class="flex-1">
+                            <label class="x-small d-block">Row Count Source</label>
+                            <select class="row-count-source small w-100">
+                                <option value="fixed" ${task.csv_config?.rows?.source === 'fixed' ? 'selected' : ''}>Fixed Number</option>
+                                <option value="formula" ${task.csv_config?.rows?.source === 'formula' ? 'selected' : ''}>V2 Formula (div,mult)</option>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            <label class="x-small d-block">Count Value</label>
+                            <input type="text" class="row-count-val small w-100" value="${task.csv_config?.rows?.value || '12'}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="small">Description</label>
+                <textarea class="task-desc-input" rows="2">${task.description || ''}</textarea>
+            </div>
+        `;
+        tasksContainer.appendChild(div);
+    }
+
+    addNewWorkflowBtn.onclick = () => {
+        currentWorkflowId = null;
+        document.getElementById('wf_id').value = '';
+        document.getElementById('wf_id').readOnly = false;
+        document.getElementById('wf_name').value = '';
+        document.getElementById('wfModalTitle').textContent = 'Add New Project Type';
+        tasksContainer.innerHTML = '';
+        createEmptyTaskRow({ key: 'start', name: 'Start Task', offset: { value: 0, unit: 'days' } });
+        workflowModal.style.display = 'flex';
+    };
+
+    document.querySelectorAll('.edit-wf-btn').forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.dataset.id;
+            const config = JSON.parse(btn.dataset.config);
+            const targetIndex = btn.dataset.index;
+            currentWorkflowId = id;
+            
+            document.getElementById('wf_id').value = id;
+            document.getElementById('wf_id').readOnly = true;
+            document.getElementById('wf_name').value = config.name;
+            document.getElementById('wfModalTitle').textContent = 'Edit Project Type: ' + config.name;
+            
+            tasksContainer.innerHTML = '';
+            config.tasks.forEach((task, idx) => createEmptyTaskRow(task, idx));
+            
+            workflowModal.style.display = 'flex';
+
+            // Auto-scroll and highlight target task
+            if (targetIndex !== undefined) {
+                setTimeout(() => {
+                    const targetRow = document.getElementById(`task-row-${targetIndex}`);
+                    if (targetRow) {
+                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetRow.classList.add('highlight-task');
+                    }
+                }, 100);
+            }
+        };
+    });
+
+    document.querySelectorAll('.delete-wf-btn').forEach(btn => {
+        btn.onclick = async () => {
+            const id = btn.dataset.id;
+            if (!confirm(`Are you sure you want to delete the '${id}' project type?`)) return;
+            
+            const response = await fetch(`/api/delete_workflow/${id}`, { method: 'POST' });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete workflow.');
+            }
+        };
+    });
+
+    addTaskBtn.onclick = () => createEmptyTaskRow();
+    closeWfModal.onclick = () => workflowModal.style.display = 'none';
+
+    workflowForm.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const id = document.getElementById('wf_id').value;
+        const name = document.getElementById('wf_name').value;
+        const tasks = [];
+        
+        tasksContainer.querySelectorAll('.task-row').forEach(row => {
+            const csvType = row.querySelector('.task-csv-type').value;
+            let csvConfig = null;
+            if (csvType === 'custom') {
+                const builder = row.querySelector('.custom-logic-builder');
+                csvConfig = {
+                    type: 'custom',
+                    cols: [
+                        { source: builder.querySelector('.col-source-1').value, value: builder.querySelector('.col-manual-1').value },
+                        { source: builder.querySelector('.col-source-2').value, value: builder.querySelector('.col-manual-2').value },
+                        { source: builder.querySelector('.col-source-3').value, value: builder.querySelector('.col-manual-3').value },
+                        { source: builder.querySelector('.col-source-4').value, value: builder.querySelector('.col-manual-4').value }
+                    ],
+                    rows: {
+                        source: builder.querySelector('.row-count-source').value,
+                        value: builder.querySelector('.row-count-val').value
+                    }
+                };
+            } else if (csvType !== 'none') {
+                csvConfig = {
+                    type: csvType,
+                    label: row.querySelector('.task-csv-label').value,
+                    value: row.querySelector('.task-csv-value').value
+                };
+            }
+
+            tasks.push({
+                name: row.querySelector('.task-name-input').value,
+                key: row.querySelector('.task-key-input').value,
+                description: row.querySelector('.task-desc-input').value,
+                offset: {
+                    value: parseInt(row.querySelector('.task-offset-value').value),
+                    unit: row.querySelector('.task-offset-unit').value
+                },
+                csv_config: csvConfig
+            });
+        });
+
+        const response = await fetch('/api/save_workflow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: id,
+                config: { name: name, tasks: tasks }
+            })
+        });
+
+        if (response.ok) {
+            alert('Workflow saved successfully!');
+            window.location.reload();
+        } else {
+            alert('Failed to save workflow.');
+        }
+    };
+});
+</script>
+{% endblock %}

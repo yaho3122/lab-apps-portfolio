@@ -1,0 +1,40 @@
+<div class="gantt-chart-container">
+    {% if projects %}
+        <div class="gantt-timeline">
+            {% set current_date = timeline_start %}
+            {% for i in range(12) %}
+                {% if current_date < timeline_end %}
+                    {% set month_start = current_date.replace(day=1) %}
+                    {% set next_month_start = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1) %}
+                    {% set days_in_month = (next_month_start - month_start).days %}
+                    {% set width = (days_in_month / total_days) * 100 %}
+                    <div class="gantt-month" style="width: {{ width }}%;">
+                        {{ month_start.strftime('%b %y') }}
+                    </div>
+                    {% set current_date = next_month_start %}
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="gantt-rows">
+            {% for project in projects %}
+            <div class="gantt-row">
+                <div class="gantt-label">{{ project.name }}</div>
+                <div class="gantt-bar-wrapper">
+                    {% set offset_days = (project.startDate - timeline_start).days %}
+                    {% set duration_days = (project.endDate - project.startDate).days + 1 %}
+                    {% set left = (offset_days / total_days) * 100 %}
+                    {% set width = (duration_days / total_days) * 100 %}
+                    <div 
+                        class="gantt-bar" 
+                        style="left: {{ left }}%; width: {{ width }}%; background-color: {{ project.color }};"
+                        title="{{ project.name }} Start: {{ project.startDate.strftime('%x') }} End: {{ project.endDate.strftime('%x') }}"
+                    >
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="gantt-empty">No projects to display. Add a new workflow to see the Gantt chart.</div>
+    {% endif %}
+</div>

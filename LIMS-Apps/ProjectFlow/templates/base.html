@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ProjectFlow Calendar{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='modern.css') }}">
+    <!-- Add Chart.js for dashboard charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 5px;
+        }
+
+        /* Styles for Day View Page */
+        .day-view-panel {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .day-view-controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-item-detailed {
+            background-color: #ffffff;
+            border-left: 5px solid #4a90e2; /* Default color */
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .task-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .task-project-name {
+            font-size: 1.1em;
+            margin-right: 10px;
+        }
+
+        .task-name {
+            font-size: 1em;
+            color: #555;
+        }
+
+        .task-description {
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="header-content d-flex align-items-center">
+                <nav class="d-flex align-items-center gap-2 w-100">
+                    <a href="{{ url_for('index', view='calendar') }}" class="nav-button {% if request.args.get('view') == 'calendar' or not request.args.get('view') and request.endpoint == 'index' %}active{% endif %}">Calendar</a>
+                    <a href="{{ url_for('index', view='gantt') }}" class="nav-button {% if request.args.get('view') == 'gantt' %}active{% endif %}">Gantt</a>
+                    <a href="{{ url_for('index', view='dashboard') }}" class="nav-button {% if request.args.get('view') == 'dashboard' %}active{% endif %}">Dashboard</a>
+                    <a href="{{ url_for('t0_info') }}" class="nav-button {% if request.endpoint == 't0_info' %}active{% endif %}">T0 Info</a>
+                    <a href="{{ url_for('progeny_info') }}" class="nav-button {% if request.endpoint == 'progeny_info' %}active{% endif %}">Progeny Info</a>
+                    {% if session.get('role') == 'admin' %}
+                    <a href="{{ url_for('setup') }}" class="nav-button {% if request.endpoint == 'setup' %}active{% endif %}">Setup</a>
+                    {% endif %}
+                    
+                    <!-- Search Bar -->
+                    <div class="search-container ms-3" style="position: relative;">
+                        <input type="text" id="globalSearch" placeholder="Search Project..." class="nav-search-input" autocomplete="off">
+                        <div id="searchResults" class="search-dropdown" style="display: none;"></div>
+                    </div>
+
+                    <div class="user-info ms-auto d-flex align-items-center gap-2">
+                        <span class="username-text">{{ session.get('username') }} ({{ session.get('role') }})</span>
+                        <a href="{{ url_for('logout') }}" class="nav-button button-danger" style="padding: 5px 12px; font-size: 0.85rem;">Logout</a>
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="flashes">
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% block task_modal_block %}
+    <!-- Task Edit/Delete Modal -->
+    <div id="taskModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Task</h2>
+                <button class="modal-close-button" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editTaskForm">
+                    <input type="hidden" id="modalTaskId">
+                    <div class="form-group">
+                        <label for="modalTaskName">Task Name:</label>
+                        <input type="text" id="modalTaskName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalProjectName">Project Name:</label>
+                        <input type="text" id="modalProjectName" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalTaskDate">Date:</label>
+                        <input type="date" id="modalTaskDate" name="date" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalTaskDescription">Description:</label>
+                        <textarea id="modalTaskDescription" name="description" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalTaskAssignedTo">Assigned Personnel:</label>
+                        <select id="modalTaskAssignedTo" name="assigned_member" multiple class="w-100" style="height: 100px;">
+                            {% if lab_members %}
+                                {% for member in lab_members %}
+                                <option value="{{ member }}">{{ member }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option disabled>No personnel defined in Setup</option>
+                            {% endif %}
+                        </select>
+                        <small class="text-muted d-block mt-1">Hold Ctrl (Win) or Cmd (Mac) to select multiple.</small>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="modalUpdateSubsequent" name="update_subsequent" checked>
+                        <label for="modalUpdateSubsequent">Update subsequent tasks based on workflow offsets</label>
+                    </div>
+                    <div class="modal-actions">
+                        {% if session.get('role') in ['admin', 'editor'] %}
+                        <button type="submit" class="button">Update Task</button>
+                        <button type="button" class="button button-danger" onclick="deleteTask()">Delete Task</button>
+                        {% else %}
+                        <p class="text-muted small">Read-only access</p>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

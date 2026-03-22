@@ -1,0 +1,352 @@
+<div class="dashboard-view">
+    <!-- Gemini Debug: Dashboard HTML is being served. -->
+    <!-- Gemini Test Comment: 202508141630 -->
+    
+        <div class="dashboard-filters">
+            <form method="GET" action="/">
+                <input type="hidden" name="view" value="dashboard">
+                <div class="form-group">
+                    <label for="dash-start-date">Filter Start Date</label>
+                    <input id="dash-start-date" type="date" name="filter_start_date" value="{{ request.args.get('filter_start_date', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="dash-end-date">Filter End Date</label>
+                    <input id="dash-end-date" type="date" name="filter_end_date" value="{{ request.args.get('filter_end_date', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="dash-trait">Filter Trait</label>
+                    <select id="dash-trait" name="filter_trait">
+                        <option value="">All</option>
+                        {% for trait in unique_traits %}
+                            <option value="{{ trait }}" {{ 'selected' if request.args.get('filter_trait') == trait else '' }}>{{ trait }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="button-secondary" type="submit">Filter</button>
+                <a href="?view=dashboard" class="button">Reset</a>
+                <button class="button" id="importRsDataBtn">Import RS Data</button>
+            </form>
+        </div>
+        <div class="dashboard-charts-container">
+            <div class="chart-card">
+                <h3>TF% Comparison</h3>
+                <canvas id="tf-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Regen% Comparison</h3>
+                <canvas id="regen-chart"></canvas>
+            </div>
+        </div>
+
+        {% if projects %}
+        <div class="kpi-cards-container">
+            <div class="kpi-card">
+                <h3>Total Projects</h3>
+                <p>{{ kpis.totalProjects }}</p>
+            </div>
+            <div class="kpi-card">
+                <h3>Average TF %</h3>
+                <p>{{ "%.2f"|format(kpis.avgTf) }}%</p>
+            </div>
+            <div class="kpi-card">
+                <h3>Average Regen %</h3>
+                <p>{{ "%.2f"|format(kpis.avgRegen) }}%</p>
+            </div>
+        </div>
+
+        <div class="dashboard-table-container">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+                        <th>Description</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>TF %</th>
+                        <th>Regen %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in projects %}
+                        <tr>
+                            <td>{{ p.name }}</td>
+                            <td title="{{ p.description }}">{{ p.description }}</td>
+                            <td>{{ p.startDate.strftime('%x') }}</td>
+                            <td>{{ p.endDate.strftime('%x') }}</td>
+                            <td>{{ "%.2f"|format(p.tfPercent) + '%' if p.tfPercent is not none else 'N/A' }}</td>
+                            <td>{{ "%.2f"|format(p.regenPercent) + '%' if p.regenPercent is not none else 'N/A' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="dashboard-empty">No project data to display. Add a new workflow to see the dashboard.</div>
+    {% endif %}
+    
+    
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // importRsDataBtn event listener
+        const importRsDataBtn = document.getElementById('importRsDataBtn');
+        if (importRsDataBtn) {
+            importRsDataBtn.addEventListener('click', function() {
+                fetch('/import_rs_data', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload(); // Reload to see changes
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred during import.');
+                });
+            });
+        }
+
+        const projectsData = {{ projects | tojson | safe }};
+        const projectNames = projectsData.map(p => p.name);
+        const tfPercentages = projectsData.map(p => p.tfPercent || 0);
+        const regenPercentages = projectsData.map(p => p.regenPercent || 0);
+
+        // TF% Chart with grouping and row-based coloring
+        const tfCtx = document.getElementById('tf-chart');
+        if (tfCtx) {
+            // Sort projects by name to group by prefix
+            const sortedProjects = [...projectsData].sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Define color mapping for row positions (1st, 2nd, 3rd, 4th row)
+            const rowColors = [
+                'rgba(255, 99, 132, 0.6)',   // Red - 1st row
+                'rgba(54, 162, 235, 0.6)',   // Blue - 2nd row
+                'rgba(75, 192, 192, 0.6)',   // Teal - 3rd row
+                'rgba(255, 206, 86, 0.6)'    // Yellow - 4th row
+            ];
+            
+            const rowBorderColors = [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(255, 206, 86, 1)'
+            ];
+            
+            const tfLabels = sortedProjects.map(p => p.name);
+            const tfData = sortedProjects.map(p => p.tfPercent || 0);
+            
+            // Assign colors based on row position within each prefix group
+            const barColors = [];
+            const barBorderColors = [];
+            let currentPrefix = '';
+            let rowIndex = 0;
+            
+            sortedProjects.forEach((p, index) => {
+                // Extract prefix (e.g., "26GO-01" from "26GO-01-A")
+                const match = p.name.match(/^(\d+GO-\d+)-/);
+                const prefix = match ? match[1] : p.name;
+                
+                // Reset row index when prefix changes
+                if (prefix !== currentPrefix) {
+                    rowIndex = 0;
+                    currentPrefix = prefix;
+                } else {
+                    rowIndex++;
+                }
+                
+                // Assign color based on row index
+                const colorIndex = rowIndex % rowColors.length;
+                barColors.push(rowColors[colorIndex]);
+                barBorderColors.push(rowBorderColors[colorIndex]);
+            });
+            
+            // Identify group boundaries for vertical lines
+            const groupBoundaries = [];
+            currentPrefix = '';
+            sortedProjects.forEach((p, index) => {
+                const match = p.name.match(/^(\d+GO-\d+)-/);
+                const prefix = match ? match[1] : p.name;
+                
+                if (index > 0 && prefix !== currentPrefix) {
+                    groupBoundaries.push(index - 0.5);
+                }
+                currentPrefix = prefix;
+            });
+            
+            // Custom plugin to draw vertical lines between groups
+            const verticalLinePlugin = {
+                id: 'verticalLinesTF',
+                afterDraw: (chart) => {
+                    const ctx = chart.ctx;
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+                    
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    
+                    groupBoundaries.forEach(boundary => {
+                        const x = xScale.getPixelForValue(boundary);
+                        ctx.beginPath();
+                        ctx.moveTo(x, yScale.top);
+                        ctx.lineTo(x, yScale.bottom);
+                        ctx.stroke();
+                    });
+                    
+                    ctx.restore();
+                }
+            };
+            
+            new Chart(tfCtx, {
+                type: 'bar',
+                data: {
+                    labels: tfLabels,
+                    datasets: [{
+                        label: 'TF %',
+                        data: tfData,
+                        backgroundColor: barColors,
+                        borderColor: barBorderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    devicePixelRatio: 2,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Percentage'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Project Name'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                generateLabels: function() {
+                                    return [
+                                        {
+                                            text: '1st Row',
+                                            fillStyle: rowColors[0],
+                                            strokeStyle: rowBorderColors[0],
+                                            lineWidth: 1
+                                        },
+                                        {
+                                            text: '2nd Row',
+                                            fillStyle: rowColors[1],
+                                            strokeStyle: rowBorderColors[1],
+                                            lineWidth: 1
+                                        },
+                                        {
+                                            text: '3rd Row',
+                                            fillStyle: rowColors[2],
+                                            strokeStyle: rowBorderColors[2],
+                                            lineWidth: 1
+                                        },
+                                        {
+                                            text: '4th Row',
+                                            fillStyle: rowColors[3],
+                                            strokeStyle: rowBorderColors[3],
+                                            lineWidth: 1
+                                        }
+                                    ];
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw.toFixed(2) + '%';
+                                }
+                            }
+                        },
+                        datalabels: { // This plugin needs to be installed separately: chartjs-plugin-datalabels
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value) {
+                                return value.toFixed(2) + '%';
+                            }
+                        }
+                    }
+                },
+                plugins: [verticalLinePlugin]
+            });
+        }
+
+        // Regen% Chart
+        const regenCtx = document.getElementById('regen-chart');
+        if (regenCtx) {
+            new Chart(regenCtx, {
+                type: 'bar',
+                data: {
+                    labels: projectNames,
+                    datasets: [{
+                        label: 'Regen %',
+                        data: regenPercentages,
+                        backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Percentage'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Project Name'
+                            }
+                        },
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw.toFixed(2) + '%';
+                                }
+                            }
+                        },
+                        datalabels: { // This plugin needs to be installed separately: chartjs-plugin-datalabels
+                            anchor: 'end',
+                            align: 'top',
+                            formatter: function(value) {
+                                return value.toFixed(2) + '%';
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>

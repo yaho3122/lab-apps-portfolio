@@ -1,0 +1,213 @@
+{
+    "transformation": {
+        "name": "Transformation Project",
+        "tasks": [
+            {
+                "name": "Transformation Task",
+                "key": "start",
+                "description": "",
+                "offset": {
+                    "value": 0,
+                    "unit": "days"
+                },
+                "csv_config": {
+                    "type": "fixed",
+                    "label": "OM",
+                    "value": "6"
+                }
+            },
+            {
+                "name": "HYG",
+                "key": "hyg",
+                "description": "Screening",
+                "offset": {
+                    "value": 1,
+                    "unit": "days"
+                },
+                "csv_config": {
+                    "type": "fixed",
+                    "label": "hyg",
+                    "value": "12"
+                }
+            },
+            {
+                "name": "Pre-H",
+                "key": "pre",
+                "description": "Pre-regeneration\nV1,V2,V3\nV1=# of calli, V2=transformed, V3=Regenerated",
+                "offset": {
+                    "value": 3,
+                    "unit": "weeks"
+                },
+                "csv_config": {
+                    "type": "formula",
+                    "label": "pre",
+                    "value": ""
+                }
+            },
+            {
+                "name": "RS",
+                "key": "rs",
+                "description": "Regeneration",
+                "offset": {
+                    "value": 1,
+                    "unit": "weeks"
+                },
+                "csv_config": {
+                    "type": "rs_entries",
+                    "label": "",
+                    "value": ""
+                }
+            },
+            {
+                "name": "End of Project",
+                "key": "end",
+                "description": "Final project wrap-up and closure.",
+                "offset": {
+                    "value": 6,
+                    "unit": "weeks"
+                },
+                "csv_config": null
+            }
+        ]
+    },
+    "Germplasm Optimization": {
+        "name": "Callus Induction",
+        "tasks": [
+            {
+                "name": "NB0",
+                "key": "B0",
+                "description": "",
+                "offset": {
+                    "value": 0,
+                    "unit": "days"
+                },
+                "csv_config": {
+                    "type": "germplasm_b0",
+                    "label": "B0B1B2",
+                    "value": "12"
+                }
+            },
+            {
+                "name": "NB1",
+                "key": "B1",
+                "description": "",
+                "offset": {
+                    "value": 7,
+                    "unit": "days"
+                },
+                "csv_config": null
+            },
+            {
+                "name": "NB2",
+                "key": "B2",
+                "description": "",
+                "offset": {
+                    "value": 9,
+                    "unit": "days"
+                },
+                "csv_config": null
+            }
+        ]
+    },
+    "Agrobateria mediate transformation": {
+        "name": "AMT",
+        "tasks": [
+            {
+                "name": "Cell culture",
+                "key": "Streaking",
+                "description": "",
+                "offset": {
+                    "value": 0,
+                    "unit": "days"
+                },
+                "csv_config": null
+            },
+            {
+                "name": "Colony Pickup",
+                "key": "Colony",
+                "description": "",
+                "offset": {
+                    "value": 3,
+                    "unit": "days"
+                },
+                "csv_config": null
+            },
+            {
+                "name": "Master Plate",
+                "key": "Streaking",
+                "description": "",
+                "offset": {
+                    "value": 1,
+                    "unit": "days"
+                },
+                "csv_config": null
+            },
+            {
+                "name": "AM-Transformation",
+                "key": "Transformation",
+                "description": "",
+                "offset": {
+                    "value": 3,
+                    "unit": "days"
+                },
+                "csv_config": {
+                    "type": "fixed",
+                    "label": "AMT",
+                    "value": "12"
+                }
+            },
+            {
+                "name": "Screening",
+                "key": "Washing & Screening",
+                "description": "",
+                "offset": {
+                    "value": 3,
+                    "unit": "days"
+                },
+                "csv_config": {
+                    "type": "fixed",
+                    "label": "AMT-Hyg",
+                    "value": "12"
+                }
+            },
+            {
+                "name": "Pre-H",
+                "key": "Pre-Regeneration",
+                "description": "",
+                "offset": {
+                    "value": 3,
+                    "unit": "weeks"
+                },
+                "csv_config": {
+                    "type": "formula",
+                    "label": "",
+                    "value": ""
+                }
+            },
+            {
+                "name": "RS-H",
+                "key": "Regeneration",
+                "description": "",
+                "offset": {
+                    "value": 1,
+                    "unit": "weeks"
+                },
+                "csv_config": {
+                    "type": "rs_entries",
+                    "label": "",
+                    "value": ""
+                }
+            },
+            {
+                "name": "End of Project",
+                "key": "End of Project",
+                "description": "",
+                "offset": {
+                    "value": 6,
+                    "unit": "weeks"
+                },
+                "csv_config": null
+            }
+        ]
+    }
+}

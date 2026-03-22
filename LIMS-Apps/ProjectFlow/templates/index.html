@@ -1,0 +1,1148 @@
+{% extends "base.html" %}
+{% block title %}ProjectFlow Calendar{% endblock %}
+{% block content %}
+    {% if session.get('role') in ['admin', 'editor'] %}
+    <div class="controls-panel">
+        <h2>Add New Project</h2>
+        <form action="{{ url_for('add_workflow') }}" method="post">
+            <div class="form-group">
+                <label for="project_name">Project Name:</label>
+                <input type="text" id="project_name" name="project_name" required>
+            </div>
+            <div class="form-group">
+                <label for="project_description">Project Description:</label>
+                <textarea id="project_description" name="project_description"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="trait_description">Trait Description:</label>
+                <input type="text" id="trait_description" name="trait_description">
+            </div>
+            <div class="form-group">
+                <label for="workflow_type">Project Type:</label>
+                <select id="workflow_type" name="workflow_type" required>
+                    {% for wf_id, wf_config in workflows.items() %}
+                        <option value="{{ wf_id }}">{{ wf_config.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" value="{{ current_date.isoformat() }}" required>
+            </div>
+            <button type="submit">Add Project</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="calendar-panel">
+        <div class="calendar-header">
+            {% if view_mode in ['calendar', 'weekly', 'daily'] %}
+            <div class="calendar-nav-group d-flex align-items-center" style="gap: 10px;">
+                <div class="nav-buttons d-flex" style="gap: 5px;">
+                    <a href="{{ url_for('index', date=prev_month, view=view_mode, filter_assigned_to=filter_assigned_to) }}" class="button small">&lt; Prev</a>
+                    <a href="{{ url_for('index', view=view_mode, filter_assigned_to=filter_assigned_to) }}" class="button small">Today</a>
+                    <a href="{{ url_for('index', date=next_month, view=view_mode, filter_assigned_to=filter_assigned_to) }}" class="button small">Next &gt;</a>
+                </div>
+                
+                <div class="view-toggle-group" style="display: inline-flex; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; margin-left: 5px;">
+                    <a href="{{ url_for('index', view='calendar', date=current_date.strftime('%Y-%m-%d'), filter_assigned_to=filter_assigned_to) }}" class="button small {% if view_mode == 'calendar' %}active{% else %}button-secondary{% endif %}" style="border-radius: 0; padding: 8px 12px;">Month</a>
+                    <a href="{{ url_for('index', view='weekly', date=current_date.strftime('%Y-%m-%d'), filter_assigned_to=filter_assigned_to) }}" class="button small {% if view_mode == 'weekly' %}active{% else %}button-secondary{% endif %}" style="border-radius: 0; padding: 8px 12px;">Week</a>
+                    <a href="{{ url_for('index', view='daily', date=current_date.strftime('%Y-%m-%d'), filter_assigned_to=filter_assigned_to) }}" class="button small {% if view_mode == 'daily' %}active{% else %}button-secondary{% endif %}" style="border-radius: 0; padding: 8px 12px;">Day</a>
+                </div>
+            </div>
+
+            <div class="calendar-filter-group" style="margin-left: 15px; display: inline-flex; align-items: center; gap: 15px;">
+                <form method="GET" action="/" style="display: inline-flex; align-items: center; gap: 12px;">
+                    <input type="hidden" name="view" value="{{ view_mode }}">
+                    <input type="hidden" name="date" value="{{ current_date.strftime('%Y-%m-%d') }}">
+                    
+                    <div class="d-flex align-items-center gap-1">
+                        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Personnel:</span>
+                        <select name="filter_assigned_to" onchange="this.form.submit()" class="header-filter-select" style="min-width: 120px;">
+                            <option value="">All</option>
+                            {% for member in lab_members %}
+                            <option value="{{ member }}" {% if filter_assigned_to == member %}selected{% endif %}>{{ member }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Type:</span>
+                        <select name="filter_workflow_type" onchange="this.form.submit()" class="header-filter-select" style="min-width: 120px;">
+                            <option value="">All</option>
+                            {% for wf_id, wf_config in workflows.items() %}
+                            <option value="{{ wf_id }}" {% if filter_workflow_type == wf_id %}selected{% endif %}>{{ wf_config.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+                
+                <button onclick="window.print()" class="button small button-secondary" title="Print this view">
+                    <span style="margin-right: 5px;">⎙</span> Print
+                </button>
+            </div>
+{% endif %}
+            <h2>{{ current_date.strftime('%B %Y') }}</h2>
+        </div>
+
+        {% if view_mode in ['calendar', 'weekly', 'daily'] %}
+        <div class="calendar-grid {% if view_mode == 'weekly' %}weekly-view{% elif view_mode == 'daily' %}daily-view{% endif %}">
+            {% if view_mode != 'daily' %}
+            <div class="day-name">Sun</div>
+            <div class="day-name">Mon</div>
+            <div class="day-name">Tue</div>
+            <div class="day-name">Wed</div>
+            <div class="day-name">Thu</div>
+            <div class="day-name">Fri</div>
+            <div class="day-name">Sat</div>
+            {% endif %}
+
+            {% for day in calendar_data %}
+            <div class="day-cell {% if day.is_other_month %}other-month{% endif %} {% if day.is_today %}today{% endif %}" 
+                 data-date="{{ day.date.isoformat() }}"
+                 {% if view_mode == 'weekly' %}style="min-height: 400px;"{% elif view_mode == 'daily' %}style="grid-column: span 7; min-height: 600px;"{% endif %}>
+                <div class="day-number">
+                    <a href="{{ url_for('index', view='daily', date=day.date.isoformat(), filter_assigned_to=filter_assigned_to) }}" style="font-size: 1.2rem;">
+                        {{ day.date.strftime('%a, %b %d') if view_mode != 'calendar' else day.date.day }}
+                    </a>
+                </div>
+                <div class="tasks-container">
+                    {% for task in day.tasks %}
+                    <div
+                        class="task-item {{ 'workflow-task' if task.projectName else '' }}"
+                        style="background-color: {{ task.color if task.color else '#4a90e2' }}; padding: 10px; margin-bottom: 8px;"
+                        title="{{ task.projectName + ' - ' if task.projectName else '' }}{{ task.name }}
+{{ task.description }}"
+                        onclick='openModal({{ task.id }})'
+                        draggable="true"
+                        data-task-id="{{ task.id }}"
+                        data-workflow-id="{{ task.workflowId if task.workflowId else '' }}"
+                        data-task-key="{{ task.workflowTaskKey if task.workflowTaskKey else '' }}"
+                    >
+                        {% if task.projectName %}
+                        <span class="task-project-name" style="font-size: 0.9rem;">{{ task.projectName }}</span>
+                        <span class="task-sub-name">{{ task.name }}</span>
+                        {% else %}
+                        {{ task.name }}
+                        {% endif %}
+                        
+                        {% if view_mode != 'calendar' %}
+                        <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.9; color: #444; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 5px;">
+                            {{ task.description | truncate(100) }}
+                        </div>
+                        {% endif %}
+
+                        {% if task.assigned_to %}
+                        <div class="task-assigned-initials" style="font-size: 0.7rem; color: #333; font-weight: bold; background: rgba(255,255,255,0.7); padding: 2px 6px; border-radius: 4px; margin-top: 8px; display: inline-block;">
+                            Assigned: {% for person in task.assigned_to.split(',') -%}
+                                {% for part in person.strip().split() %}{{ part[0] | upper }}{% endfor %}{% if not loop.last %}, {% endif %}
+                            {%- endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if task_csv_status.get(task.id) %}
+                        <a href="{{ url_for('generate_csv', task_id=task.id) }}" class="download-csv-link" onclick="event.stopPropagation();">Download CSV</a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% elif view_mode == 'gantt' %}
+        <div class="dashboard-filters mb-3">
+            <form method="GET" action="/">
+                <input type="hidden" name="view" value="gantt">
+                <div class="form-group">
+                    <label for="gantt-start-date">Filter Start Date</label>
+                    <input id="gantt-start-date" type="date" name="filter_start_date" value="{{ request.args.get('filter_start_date', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="gantt-end-date">Filter End Date</label>
+                    <input id="gantt-end-date" type="date" name="filter_end_date" value="{{ request.args.get('filter_end_date', '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="gantt-wf-type">Filter Project Type</label>
+                    <select id="gantt-wf-type" name="filter_workflow_type">
+                        <option value="">All</option>
+                        {% for wf_id, wf_config in workflows.items() %}
+                            <option value="{{ wf_id }}" {{ 'selected' if filter_workflow_type == wf_id else '' }}>{{ wf_config.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="gantt-assigned">Filter by Person</label>
+                    <select id="gantt-assigned" name="filter_assigned_to">
+                        <option value="">All</option>
+                        {% for member in lab_members %}
+                            <option value="{{ member }}" {{ 'selected' if filter_assigned_to == member else '' }}>{{ member }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="button-secondary" type="submit">Filter</button>
+                <a href="?view=gantt" class="button">Reset</a>
+            </form>
+        </div>
+        <div class="gantt-chart-container">
+            {% if projects %}
+            <div class="gantt-timeline">
+                {% set current_month = timeline_start.month %}
+                {% set current_year = timeline_start.year %}
+                {% for i in range(total_days + 1) %}
+                    {% set date = timeline_start + timedelta(days=i) %}
+                    {% if date.day == 1 %}
+                        <div class="gantt-month" style="flex-grow: {{ (date.replace(month=date.month % 12 + 1, day=1) - date).days }};">
+                            {{ date.strftime('%b %Y') }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="gantt-rows">
+                {% for project in projects %}
+                <div class="gantt-row">
+                    <div class="gantt-label">{{ project.name }}</div>
+                    <div class="gantt-bar-wrapper">
+                        <div class="gantt-bar" style="left: {{ ((project.startDate - timeline_start).days / total_days) * 100 }}%; width: {{ ((project.endDate - project.startDate).days / total_days) * 100 }}%; background-color: {{ project.color }};" title="{{ project.name }} ({{ project.startDate.strftime('%Y-%m-%d') }} to {{ project.endDate.strftime('%Y-%m-%d') }})"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="gantt-empty">No projects found for the selected filter.</p>
+            {% endif %}
+        </div>
+        {% elif view_mode == 'dashboard' %}
+        <div class="dashboard-view">
+            <div class="dashboard-filters">
+                <form method="GET" action="/">
+                    <input type="hidden" name="view" value="dashboard">
+                    <div class="form-group">
+                        <label for="dash-start-date">Filter Start Date</label>
+                        <input id="dash-start-date" type="date" name="filter_start_date" value="{{ request.args.get('filter_start_date', '') }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="dash-end-date">Filter End Date</label>
+                        <input id="dash-end-date" type="date" name="filter_end_date" value="{{ request.args.get('filter_end_date', '') }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="dash-wf-type">Filter Project Type</label>
+                        <select id="dash-wf-type" name="filter_workflow_type">
+                            <option value="">All</option>
+                            {% for wf_id, wf_config in workflows.items() %}
+                                <option value="{{ wf_id }}" {{ 'selected' if filter_workflow_type == wf_id else '' }}>{{ wf_config.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dash-assigned">Filter by Person</label>
+                        <select id="dash-assigned" name="filter_assigned_to">
+                            <option value="">All</option>
+                            {% for member in lab_members %}
+                                <option value="{{ member }}" {{ 'selected' if filter_assigned_to == member else '' }}>{{ member }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dash-trait">Filter Trait</label>
+                        <select id="dash-trait" name="filter_trait">
+                            <option value="">All</option>
+                            {% for trait in unique_traits %}
+                                <option value="{{ trait }}" {{ 'selected' if request.args.get('filter_trait') == trait else '' }}>{{ trait }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dash-description">Filter Description</label>
+                        <select id="dash-description" name="filter_description" multiple>
+                            {% for description in unique_descriptions %}
+                                <option value="{{ description }}" {% if description in filter_descriptions %}selected{% endif %}>{{ description }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="dash-show-lines" name="show_lines" {% if request.args.get('show_lines') == 'on' %}checked{% endif %}>
+                        <label for="dash-show-lines">Show Group Lines</label>
+                    </div>
+                    <button class="button-secondary" type="submit">Filter</button>
+                    <a href="?view=dashboard" class="button">Reset</a>
+                </form>
+            </div>
+
+            {% if kpis.totalProjects > 0 %}
+            <div class="kpi-cards-container">
+                <div class="kpi-card">
+                    <h3>Total Projects</h3>
+                    <p>{{ kpis.totalProjects }}</p>
+                </div>
+                <div class="kpi-card">
+                    <h3>Average TF %</h3>
+                    <p>{{ "%.2f"|format(kpis.avgTf) }}%</p>
+                </div>
+                <div class="kpi-card">
+                    <h3>Average Regen %</h3>
+                    <p>{{ "%.2f"|format(kpis.avgRegen) }}%</p>
+                </div>
+            </div>
+
+            <div class="dashboard-charts-container">
+                <div class="chart-card">
+                    <h3>TF% Comparison</h3>
+                    <canvas id="tf-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Regen% Comparison</h3>
+                    <canvas id="regen-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="dashboard-table-container">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Description</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>TF %</th>
+                            <th>Regen %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                        <tr>
+                            <td>{{ project.name }}</td>
+                            <td title="{{ project.description }}">{{ project.description }}</td>
+                            <td>{{ project.startDate.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ project.endDate.strftime('%Y-%m-%d') }}</td>
+                            <td>{% if project.tfPercent is not none %}{{ "%.2f"|format(project.tfPercent) }}%{% else %}N/A{% endif %}</td>
+                            <td>{% if project.regenPercent is not none %}{{ "%.2f"|format(project.regenPercent) }}%{% else %}N/A{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="dashboard-empty">No projects to display in dashboard.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+    
+
+{% block task_modal_block %}{{ super() }}{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal functionality
+        const taskModal = document.getElementById('taskModal');
+        const editTaskForm = document.getElementById('editTaskForm');
+
+        window.openModal = async function(taskId) {
+            try {
+                const response = await fetch(`/get_task_details/${taskId}`);
+                const task = await response.json();
+
+                if (response.ok) {
+                    console.log("Task fetched:", task);
+
+                    const taskModal = document.getElementById('taskModal');
+                    const modalTaskId = document.getElementById('modalTaskId');
+                    const modalTaskName = document.getElementById('modalTaskName');
+                    const modalProjectName = document.getElementById('modalProjectName');
+                    const modalTaskDate = document.getElementById('modalTaskDate');
+                    const modalTaskDescription = document.getElementById('modalTaskDescription');
+                    const modalUpdateSubsequent = document.getElementById('modalUpdateSubsequent');
+
+                    if (!taskModal) { console.error("Error: taskModal element not found!"); return; }
+                    if (!modalTaskId) { console.error("Error: modalTaskId element not found!"); return; }
+                    if (!modalTaskName) { console.error("Error: modalTaskName element not found!"); return; }
+                    if (!modalProjectName) { console.error("Error: modalProjectName element not found!"); return; }
+                    if (!modalTaskDate) { console.error("Error: modalTaskDate element not found!"); return; }
+                    if (!modalTaskDescription) { console.error("Error: modalTaskDescription element not found!"); return; }
+                    if (!modalUpdateSubsequent) { console.error("Error: modalUpdateSubsequent element not found!"); return; }
+
+                    modalTaskId.value = task.id;
+                    console.log("modalTaskId:", modalTaskId);
+                    modalTaskName.value = task.name;
+                    console.log("modalTaskName:", modalTaskName);
+                    modalProjectName.value = task.projectName || 'N/A';
+                    console.log("modalProjectName:", modalProjectName);
+                    modalTaskDate.value = task.date || '';
+                    console.log("modalTaskDate:", modalTaskDate);
+                    modalTaskDescription.value = task.description || '';
+                    console.log("modalTaskDescription:", modalTaskDescription);
+                    modalUpdateSubsequent.checked = true; // Default to true
+                    console.log("modalUpdateSubsequent:", modalUpdateSubsequent);
+
+                    // Set multi-select for assigned personnel
+                    const assignedList = (task.assigned_to || '').split(',');
+                    const assignedSelect = document.getElementById('modalTaskAssignedTo');
+                    if (assignedSelect) {
+                        Array.from(assignedSelect.options).forEach(option => {
+                            option.selected = assignedList.includes(option.value);
+                        });
+                    }
+
+                    console.log("Attempting to display modal...");
+                    taskModal.style.display = 'block';
+                } else {
+                    alert('Error fetching task details: ' + (task.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while fetching task details.');
+            }
+        };
+
+        window.closeModal = function() {
+            taskModal.style.display = 'none';
+        };
+
+        window.onclick = function(event) {
+            if (event.target == taskModal) {
+                closeModal();
+            }
+        }
+
+        if (editTaskForm) { // Add a check for editTaskForm
+            editTaskForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                const modalTaskId = document.getElementById('modalTaskId');
+                const modalTaskDate = document.getElementById('modalTaskDate');
+                const modalTaskDescription = document.getElementById('modalTaskDescription');
+                const modalUpdateSubsequent = document.getElementById('modalUpdateSubsequent');
+
+                if (!modalTaskId) { console.error("Error: modalTaskId element not found in submit handler!"); return; }
+                if (!modalTaskDate) { console.error("Error: modalTaskDate element not found in submit handler!"); return; }
+                if (!modalTaskDescription) { console.error("Error: modalTaskDescription element not found in submit handler!"); return; }
+                if (!modalUpdateSubsequent) { console.error("Error: modalUpdateSubsequent element not found in submit handler!"); return; }
+
+                const taskId = modalTaskId.value;
+                const newDate = modalTaskDate.value;
+                const newDescription = modalTaskDescription.value;
+                const updateSubsequent = modalUpdateSubsequent.checked;
+                
+                // Gather assigned members from multi-select
+                const assignedSelect = document.getElementById('modalTaskAssignedTo');
+                const selectedMembers = Array.from(assignedSelect.selectedOptions)
+                    .map(option => option.value)
+                    .join(',');
+
+                const formData = new FormData();
+                formData.append('task_id', taskId);
+                formData.append('date', newDate);
+                formData.append('description', newDescription);
+                formData.append('assigned_to', selectedMembers);
+                if (updateSubsequent) {
+                    formData.append('update_subsequent', 'on');
+                }
+
+                try {
+                    const response = await fetch('/update_task', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        alert('Task updated successfully!');
+                        closeModal();
+                        window.location.reload();
+                    } else {
+                        alert('Error updating task: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating the task.');
+                }
+            });
+        }
+
+        window.deleteTask = async function() {
+            if (confirm('Are you sure you want to delete this task? This will only delete this specific task.')) {
+                const modalTaskId = document.getElementById('modalTaskId');
+                if (!modalTaskId) { console.error("Error: modalTaskId element not found in deleteTask!"); return; }
+                const taskId = modalTaskId.value;
+                try {
+                    const response = await fetch(`/delete_single_task/${taskId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ task_id: taskId })
+                    });
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        alert('Task deleted successfully!');
+                        closeModal();
+                        window.location.reload();
+                    } else {
+                        alert('Error deleting task: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the task.');
+                }
+            }
+        }
+    });
+
+    // --- Global Search Logic ---
+    const globalSearch = document.getElementById('globalSearch');
+    const searchResults = document.getElementById('searchResults');
+
+    if (globalSearch) {
+        let searchTimeout;
+        globalSearch.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                const response = await fetch(`/api/search_projects?q=${encodeURIComponent(query)}`);
+                const results = await response.json();
+                
+                if (results.length > 0) {
+                    searchResults.innerHTML = results.map(r => `
+                        <div class="search-result-item" onclick="window.location.href='/?view=calendar&date=${r.date}'">
+                            <span class="search-result-name">${r.name}</span>
+                            <span class="search-result-meta">${r.type} • Started: ${r.date}</span>
+                        </div>
+                    `).join('');
+                    searchResults.style.display = 'block';
+                } else {
+                    searchResults.innerHTML = '<div class="p-3 text-muted small">No projects found.</div>';
+                    searchResults.style.display = 'block';
+                }
+            }, 300);
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!globalSearch.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+
+    // --- Gantt Quick-Jump Logic ---
+    document.querySelectorAll('.gantt-bar').forEach(bar => {
+        bar.style.cursor = 'pointer';
+        bar.onclick = function() {
+            const title = this.getAttribute('title');
+            // Extract date from title: "ProjectName (YYYY-MM-DD to YYYY-MM-DD)"
+            const dateMatch = title.match(/\((\d{4}-\d{2}-\d{2})/);
+            if (dateMatch) {
+                window.location.href = `/?view=calendar&date=${dateMatch[1]}`;
+            }
+        };
+    });
+
+    // Dashboard Charts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Only initialize charts if we're on dashboard view and Chart.js is loaded
+        if (typeof Chart === 'undefined' || !window.location.search.includes('view=dashboard')) {
+            return;
+        }
+
+        const projectsData = {{ projects | tojson | safe if view_mode == 'dashboard' else '[]' }};
+        console.log('[CHART DEBUG] Projects data loaded:', projectsData);
+        if (!projectsData || projectsData.length === 0) {
+            console.log('[CHART DEBUG] No projects data available');
+            return;
+        }
+
+        const projectNames = projectsData.map(p => p.name);
+        const tfPercentages = projectsData.map(p => p.tfPercent || 0);
+        const regenPercentages = projectsData.map(p => p.regenPercent || 0);
+
+        // TF% Chart with grouping and row-based coloring
+        const tfCtx = document.getElementById('tf-chart');
+        if (tfCtx) {
+            console.log('[CHART DEBUG] Starting TF chart creation with grouping');
+            // Sort projects: first by prefix, then P1234 comes first, then alphabetically
+            const sortedProjects = [...projectsData].sort((a, b) => {
+                // Extract prefix (e.g., "26GO-01" from "26GO-01-P1234-BCIM")
+                const prefixA = a.name.match(/^(\d+GO-\d+)-/)?.[1] || a.name;
+                const prefixB = b.name.match(/^(\d+GO-\d+)-/)?.[1] || b.name;
+                
+                // First, sort by prefix
+                if (prefixA !== prefixB) {
+                    return prefixA.localeCompare(prefixB);
+                }
+                
+                // Within same prefix, P1234 comes first
+                const hasP1234_A = a.name.includes('-P1234-');
+                const hasP1234_B = b.name.includes('-P1234-');
+                
+                if (hasP1234_A && !hasP1234_B) return -1;
+                if (!hasP1234_A && hasP1234_B) return 1;
+                
+                // Otherwise, sort alphabetically
+                return a.name.localeCompare(b.name);
+            });
+            console.log('[CHART DEBUG] Sorted projects:', sortedProjects.map(p => p.name));
+            
+            // Define color mapping for row positions (1st, 2nd, 3rd, 4th row)
+            const rowColors = [
+                'rgba(255, 99, 132, 0.6)',   // Red - 1st row
+                'rgba(54, 162, 235, 0.6)',   // Blue - 2nd row
+                'rgba(75, 192, 192, 0.6)',   // Teal - 3rd row
+                'rgba(255, 206, 86, 0.6)'    // Yellow - 4th row
+            ];
+            
+            const rowBorderColors = [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(255, 206, 86, 1)'
+            ];
+            
+            const tfLabels = sortedProjects.map(p => p.name);
+            const tfData = sortedProjects.map(p => p.tfPercent || 0);
+            
+            // Assign colors based on row position within each prefix group
+            const barColors = [];
+            const barBorderColors = [];
+            let currentPrefix = '';
+            let rowIndex = 0;
+            
+            sortedProjects.forEach((p, index) => {
+                // Extract prefix (e.g., "26GO-01" from "26GO-01-A")
+                const match = p.name.match(/^(\d+GO-\d+)-/);
+                const prefix = match ? match[1] : p.name;
+                
+                console.log(`[CHART DEBUG] Project: "${p.name}", Prefix: "${prefix}", TF%: ${p.tfPercent}`);
+                
+                // Reset row index when prefix changes
+                if (prefix !== currentPrefix) {
+                    rowIndex = 0;
+                    currentPrefix = prefix;
+                } else {
+                    rowIndex++;
+                }
+                
+                console.log(`[CHART DEBUG]   Row index: ${rowIndex}, Color index: ${rowIndex % rowColors.length}`);
+                
+                // Assign color based on row index
+                const colorIndex = rowIndex % rowColors.length;
+                barColors.push(rowColors[colorIndex]);
+                barBorderColors.push(rowBorderColors[colorIndex]);
+            });
+            
+            // Identify group boundaries for vertical lines
+            const groupBoundaries = [];
+            currentPrefix = '';
+            sortedProjects.forEach((p, index) => {
+                const match = p.name.match(/^(\d+GO-\d+)-/);
+                const prefix = match ? match[1] : p.name;
+                
+                if (index > 0 && prefix !== currentPrefix) {
+                    groupBoundaries.push(index - 0.5);
+                }
+                currentPrefix = prefix;
+            });
+            
+            // Custom plugin to draw vertical lines between groups
+            const verticalLinePlugin = {
+                id: 'verticalLinesTF',
+                afterDraw: (chart) => {
+                    const showLines = document.getElementById('dash-show-lines')?.checked;
+                    if (!showLines) return; // Only draw if checked
+
+                    const ctx = chart.ctx;
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+                    
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    
+                    groupBoundaries.forEach(boundary => {
+                        const x = xScale.getPixelForValue(boundary);
+                        ctx.beginPath();
+                        ctx.moveTo(x, yScale.top);
+                        ctx.lineTo(x, yScale.bottom);
+                        ctx.stroke();
+                    });
+                    
+                    ctx.restore();
+                }
+            };
+            
+            new Chart(tfCtx, {
+                type: 'bar',
+                data: {
+                    labels: tfLabels,
+                    datasets: [{
+                        label: 'TF %',
+                        data: tfData,
+                        backgroundColor: barColors,
+                        borderColor: barBorderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    devicePixelRatio: 2,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Percentage'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Project Name'
+                            },
+                            ticks: {
+                                callback: function(value, index, ticks) {
+                                    const label = this.getLabelForValue(value);
+                                    // Remove specific suffixes from individual bar labels
+                                    return label.replace(/-P1234-BCIM$|-BCIM$|-MCI$|-CIM$/, '');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [verticalLinePlugin]
+            });
+        }
+
+        // Regen% Chart
+        const regenCtx = document.getElementById('regen-chart');
+        if (regenCtx) {
+            new Chart(regenCtx, {
+                type: 'bar',
+                data: {
+                    labels: projectNames,
+                    datasets: [{
+                        label: 'Regen %',
+                        data: regenPercentages,
+                        backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Percentage'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Project Name'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    // Drag and Drop functionality (from your existing code)
+    class ProjectFlowDragDrop {
+        constructor() {
+            this.draggedTask = null;
+            this.isTouch = 'ontouchstart' in window;
+            this.init();
+        }
+
+        init() {
+            this.setupEventListeners();
+            this.addDragDropStyles();
+        }
+
+        setupEventListeners() {
+            const calendar = document.querySelector('.calendar-grid');
+            if (!calendar) return;
+
+            // Mouse events
+            calendar.addEventListener('dragstart', this.handleDragStart.bind(this));
+            calendar.addEventListener('dragend', this.handleDragEnd.bind(this));
+            calendar.addEventListener('dragover', this.handleDragOver.bind(this));
+            calendar.addEventListener('drop', this.handleDrop.bind(this));
+            calendar.addEventListener('dragenter', this.handleDragEnter.bind(this));
+            calendar.addEventListener('dragleave', this.handleDragLeave.bind(this));
+
+            // Touch events (mobile/tablet)
+            if (this.isTouch) {
+                calendar.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+                calendar.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+                calendar.addEventListener('touchend', this.handleTouchEnd.bind(this));
+            }
+        }
+
+        addDragDropStyles() {
+            const style = document.createElement('style');
+            style.textContent = `
+                .task-item {
+                    cursor: move;
+                    user-select: none;
+                    touch-action: none;
+                    transition: all 0.2s ease;
+                }
+
+                .task-item:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                }
+
+                .download-csv-link {
+                    display: block;
+                    margin-top: 5px;
+                    font-size: 12px;
+                    color: white;
+                    text-decoration: underline;
+                }
+
+                .task-item.dragging {
+                    opacity: 0.5;
+                    transform: rotate(2deg);
+                    z-index: 1000;
+                }
+
+                .day-cell.drag-over {
+                    border-color: #007bff !important;
+                    background-color: #e3f2fd !important;
+                    transform: scale(1.02);
+                    box-shadow: 0 4px 12px rgba(0,123,255,0.3) !important;
+                }
+
+                .day-cell {
+                    transition: all 0.2s ease;
+                }
+
+                .drag-feedback {
+                    position: fixed;
+                    top: 10px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #007bff;
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    border-radius: 20px;
+                    font-size: 0.9rem;
+                    z-index: 1001;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                }
+
+                .drag-feedback.show {
+                    opacity: 1;
+                }
+
+                @media (pointer: coarse) {
+                    .task-item {
+                        min-height: 36px;
+                        padding: 8px;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+
+            const feedback = document.createElement('div');
+            feedback.className = 'drag-feedback';
+            feedback.id = 'dragFeedback';
+            feedback.textContent = 'Drag task to desired date';
+            document.body.appendChild(feedback);
+        }
+
+        handleDragStart(e) {
+            if (!e.target.classList.contains('task-item')) return;
+            this.draggedTask = e.target;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', e.target.outerHTML);
+            this.showDragFeedback();
+        }
+
+        handleDragEnd(e) {
+            if (this.draggedTask) {
+                this.draggedTask.classList.remove('dragging');
+                this.draggedTask = null;
+            }
+            this.hideDragFeedback();
+            this.clearDragOverEffects();
+        }
+
+        handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        handleDragEnter(e) {
+            const dayCell = e.target.closest('.day-cell');
+            if (dayCell && this.draggedTask) {
+                this.clearDragOverEffects();
+                dayCell.classList.add('drag-over');
+            }
+        }
+
+        handleDragLeave(e) {
+            const dayCell = e.target.closest('.day-cell');
+            if (dayCell && !dayCell.contains(e.relatedTarget)) {
+                dayCell.classList.remove('drag-over');
+            }
+        }
+
+        async handleDrop(e) {
+            e.preventDefault();
+            const dayCell = e.target.closest('.day-cell');
+            if (!dayCell || !this.draggedTask) return;
+            const newDate = this.getDateFromDayCell(dayCell);
+            const taskId = this.draggedTask.dataset.taskId;
+            const oldDate = this.getTaskCurrentDate();
+            if (newDate && newDate !== oldDate) {
+                await this.moveTask(taskId, newDate, oldDate);
+            }
+            this.clearDragOverEffects();
+        }
+
+        handleTouchStart(e) {
+            const taskElement = e.target.closest('.task-item');
+            if (!taskElement) return;
+            e.preventDefault();
+            this.draggedTask = taskElement;
+            this.touchClone = taskElement.cloneNode(true);
+            this.touchClone.style.position = 'fixed';
+            this.touchClone.style.zIndex = '1000';
+            this.touchClone.style.pointerEvents = 'none';
+            this.touchClone.style.width = taskElement.offsetWidth + 'px';
+            this.touchClone.classList.add('dragging');
+            document.body.appendChild(this.touchClone);
+            taskElement.style.opacity = '0.3';
+            const touch = e.touches[0];
+            this.updateTouchPosition(touch.clientX, touch.clientY);
+            this.showDragFeedback();
+        }
+
+        handleTouchMove(e) {
+            if (!this.draggedTask) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            this.updateTouchPosition(touch.clientX, touch.clientY);
+            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const dayCell = elementBelow?.closest('.day-cell');
+            this.clearDragOverEffects();
+            if (dayCell) {
+                dayCell.classList.add('drag-over');
+            }
+        }
+
+        handleTouchEnd(e) {
+            if (!this.draggedTask) return;
+            const touch = e.changedTouches[0];
+            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const dayCell = elementBelow?.closest('.day-cell');
+            if (dayCell) {
+                const newDate = this.getDateFromDayCell(dayCell);
+                const taskId = this.draggedTask.dataset.taskId;
+                const oldDate = this.getTaskCurrentDate();
+                if (newDate && newDate !== oldDate) {
+                    this.moveTask(taskId, newDate, oldDate);
+                }
+            }
+            this.draggedTask.style.opacity = '';
+            if (this.touchClone && this.touchClone.parentNode) {
+                this.touchClone.parentNode.removeChild(this.touchClone);
+            }
+            this.draggedTask = null;
+            this.touchClone = null;
+            this.hideDragFeedback();
+            this.clearDragOverEffects();
+        }
+
+        updateTouchPosition(x, y) {
+            if (this.touchClone) {
+                this.touchClone.style.left = (x - this.touchClone.offsetWidth / 2) + 'px';
+                this.touchClone.style.top = (y - this.touchClone.offsetHeight / 2) + 'px';
+            }
+        }
+
+        clearDragOverEffects() {
+            document.querySelectorAll('.day-cell.drag-over').forEach(cell => {
+                cell.classList.remove('drag-over');
+            });
+        }
+
+        showDragFeedback() {
+            const feedback = document.getElementById('dragFeedback');
+            if (feedback) {
+                feedback.classList.add('show');
+            }
+        }
+
+        hideDragFeedback() {
+            const feedback = document.getElementById('dragFeedback');
+            if (feedback) {
+                feedback.classList.remove('show');
+            }
+        }
+
+        getDateFromDayCell(dayCell) {
+            const calendarHeader = document.querySelector('.calendar-header h2');
+            if (!calendarHeader) return null;
+            const headerText = calendarHeader.textContent.trim();
+            const dayNumber = dayCell.querySelector('.day-number');
+            if (!dayNumber) return null;
+            const day = parseInt(dayNumber.textContent);
+            const monthYear = headerText.match(/(\w+)\s+(\d{4})/);
+            if (!monthYear) return null;
+            const monthName = monthYear[1];
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                               'July', 'August', 'September', 'October', 'November', 'December'];
+            const month = monthNames.indexOf(monthName);
+            if (month === -1) return null;
+            let targetMonth = month;
+            let targetYear = parseInt(monthYear[2]);
+            if (dayCell.classList.contains('other-month')) {
+                if (day > 15) {
+                    targetMonth = month === 0 ? 11 : month - 1;
+                    if (targetMonth === 11) targetYear--;
+                } else {
+                    targetMonth = month === 11 ? 0 : month + 1;
+                    if (targetMonth === 0) targetYear++;
+                }
+            }
+            const date = new Date(targetYear, targetMonth, day);
+            return date.toISOString().split('T')[0];
+        }
+
+        getTaskCurrentDate() {
+            if (!this.draggedTask) return null;
+            const dayCell = this.draggedTask.closest('.day-cell');
+            return this.getDateFromDayCell(dayCell);
+        }
+
+        async moveTask(taskId, newDate, oldDate) {
+            try {
+                const loadingMsg = this.showMessage('Moving task...', 'info');
+                const response = await fetch('/api/move_task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        task_id: taskId,
+                        new_date: newDate,
+                        old_date: oldDate,
+                        update_subsequent: true
+                    })
+                });
+                const result = await response.json();
+                if (loadingMsg) loadingMsg.remove();
+                if (result.success) {
+                    this.showMessage('Task moved successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = `/?view=calendar&date=${newDate}`;
+                    }, 1000);
+                } else {
+                    this.showMessage('Failed to move task: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error moving task:', error);
+                this.showMessage('An error occurred while moving task.', 'error');
+            }
+        }
+
+        showMessage(text, type = 'info') {
+            const message = document.createElement('div');
+            message.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                color: white;
+                font-weight: 500;
+                z-index: 1002;
+                transition: all 0.3s ease;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            switch (type) {
+                case 'success':
+                    message.style.backgroundColor = '#28a745';
+                    break;
+                case 'error':
+                    message.style.backgroundColor = '#dc3545';
+                    break;
+                case 'info':
+                default:
+                    message.style.backgroundColor = '#17a2b8';
+                    break;
+            }
+            message.textContent = text;
+            document.body.appendChild(message);
+            requestAnimationFrame(() => {
+                message.style.transform = 'translateX(0)';
+                message.style.opacity = '1';
+            });
+            if (type !== 'info') {
+                setTimeout(() => {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (message.parentNode) {
+                            message.parentNode.removeChild(message);
+                        }
+                    }, 300);
+                }, type === 'error' ? 5000 : 3000);
+            }
+            return message;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        new ProjectFlowDragDrop();
+    });
+</script>
+{% endblock %}

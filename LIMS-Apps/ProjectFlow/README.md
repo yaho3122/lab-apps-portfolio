@@ -57,10 +57,10 @@ ProjectFlow provides a sleek, professional interface featuring backdrop blurs an
 
 ## ⚙️ Installation & Setup
 
-1. **Clone the repository:**
+1. **Clone the portfolio repository:**
    ```bash
-   git clone https://github.com/yourusername/projectflow.git
-   cd projectflow
+   git clone https://github.com/yaho3122/lab-apps-portfolio.git
+   cd lab-apps-portfolio/LIMS-Apps/ProjectFlow
    ```
 
 2. **Install dependencies:**

@@ -23,10 +23,18 @@ Built over 6 months (July 2024 - Present) to digitize and automate laboratory wo
 - **variant_analysis** - Genetic variant calling and analysis
 - **MutMap** - Bulked segregant analysis
 
-### 🧬 CRISPR Design Tools
+### 🧬 Vector & CRISPR Design Tools
+- **IntronForge** - Automated GUI/Web platform for predicting and optimizing multi-intron insertions in plant expression vectors
 - **GuideCheck-Local** - gRNA design for Cas9/Cas12
 - **Codon_OPT** - Plant codon optimization (NSGA-III)
 - **Primer3** - Integrated primer design with specificity checking
+
+### 🛠️ Protein Engineering Projects
+- **CasForge** - AI-driven discovery pipeline utilizing protein language models to identify novel CRISPR nucleases
+- **ProteoForge** - Computational platform for rational protein engineering and structure-guided junction healing
+- **MorphoForge** - Domain-aware structural alignment (topoXfer) and molecular dynamics workstation for evaluating FTO-safe morphogenic regulators (BBM, WUS, etc.)
+
+
 
 ### 📊 Project Management
 - **ProjectFlow** - Genome editing project lifecycle tracking
@@ -46,7 +54,7 @@ Built over 6 months (July 2024 - Present) to digitize and automate laboratory wo
   - Automated reporting and visualization
 
 ## Impact
-- **6+ months** in production use
+- **12+ months** in production use
 - **Lab-wide** digital transformation
 - **Automated** workflows reducing manual tasks
 - **Real-time** inventory and project tracking
@@ -56,4 +64,4 @@ All applications are actively maintained and in daily use by the laboratory team
 
 ---
 
-*Developed as part of laboratory operations at [Company Name]*
+*Developed as part of laboratory operations at RiceTec*

@@ -64,4 +64,3 @@ All applications are actively maintained and in daily use by the laboratory team
 
 ---
 
-*Developed as part of laboratory operations at RiceTec*

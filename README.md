@@ -5,7 +5,7 @@ Portfolio of 30+ laboratory information management and bioinformatics applicatio
 
 ## Overview
 A collection of 30+ web applications developed for a CRISPR Genome Editing Laboratory.
-Built over 6 months (July 2024 - Present) to digitize and automate laboratory workflows.
+Built over 1 year (July 2025 - Present) to digitize and automate laboratory workflows.
 
 ## Technology Stack
 - **Backend:** Python, Flask
@@ -15,6 +15,10 @@ Built over 6 months (July 2024 - Present) to digitize and automate laboratory wo
 - **Frontend:** HTML, JavaScript, Bootstrap
 
 ## Applications
+
+### 🌿 Pangenomics & Predictive Modeling
+- Cannabis Pangenome Architecture Pipeline - A massive-scale (550+ GB) computational pipeline analyzing 3,515 synthase loci across phased homologous haplotypes.
+- Integrates sequence identity, 3D structural viability, native transcription data, and recombination hotspot mapping to reclassify pseudogenes and deterministically predict chemotype segregation (Type I, II, III).
 
 ### 🔬 Bioinformatics Tools
 - **BlastN** - Local BLAST interface for proprietary genomes
